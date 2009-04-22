@@ -1,0 +1,15 @@
+** GGP:
+
+Application Suite for the General Game Playing Project;
+ - A GUI-based GeneralGamePlayer
+ - A GUI-based GameServer
+ - A GUI-based GDLValidator
+ 
+Support code for the above.
+
+To write a new player your entry point is to derive a class from 
+StateMachineGame, located in src/player/gamer/statemachine
+ 
+ ** Notes:
+ 
+ This is the 4/15/09 release of GGP code for CS227B.
