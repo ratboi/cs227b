@@ -43,7 +43,7 @@ public class EasyGamer extends StateMachineGamer {
 		
 		for (List<Move> move : moves) {
 			MachineState nextState = stateMachine.getNextState(currentState, move);
-			int goal = stateMachine.getGoal(nextState, role);
+			int goal = getTerminalGoal(stateMachine, nextState);
 			if (goal >= maxGoal) {
 				maxGoal = goal;
 				selection = move.get(roleIndices.get(role));
@@ -54,6 +54,21 @@ public class EasyGamer extends StateMachineGamer {
 
 		notifyObservers(new ReflexMoveSelectionEvent(legalMoves, selection, stop - start));
 		return selection;
+	}
+	
+	private int getTerminalGoal(StateMachine stateMachine, MachineState currentState) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+		//TODO need to add base case for cycles
+		//TODO cache for already-seen states
+		if (stateMachine.isTerminal(currentState)) {
+			return stateMachine.getGoal(currentState, getRole());
+		}
+		int maxGoal = 0;
+		List<List<Move>> moves = stateMachine.getLegalJointMoves(currentState);		
+		for (List<Move> move : moves) {
+			MachineState nextState = stateMachine.getNextState(currentState, move);
+			maxGoal = Math.max(maxGoal, getTerminalGoal(stateMachine, nextState));
+		}
+		return maxGoal;
 	}
 
 	@Override
