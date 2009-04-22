@@ -85,23 +85,29 @@ public final class VisualizationPanel extends JPanel implements Observer
 	{
 		boolean atEnd = index == gameStatePanels.size()-1;		
 		ProverMachineState s = event.getState();
-		String XML = s.toXML();
-		String XSL = GameStateRenderPanel.getXSLfromFile(gameName+".xsl", 1); //1 because machinestate XMLs only ever have 1 state
-		JPanel newPanel = GameStateRenderPanel.getPanelfromGameXML(XML, XSL);
 		
-		if(gameStatePanels.size() > 0 && atEnd)
+		try
 		{
-			this.remove(gameStatePanels.get(index));
-			index++;			
-		}		
-		
-		if(atEnd)
-		{
-			tabs.add(new Integer(gameStatePanels.size()).toString(),newPanel);
-			tabs.setSelectedIndex(tabs.getComponentCount()-1);
+			String XML = s.toXML();
+			String XSL = GameStateRenderPanel.getXSLfromFile(gameName+".xsl", 1); //1 because machinestate XMLs only ever have 1 state
+			JPanel newPanel = GameStateRenderPanel.getPanelfromGameXML(XML, XSL);
+			
+			if(gameStatePanels.size() > 0 && atEnd)
+			{
+				this.remove(gameStatePanels.get(index));
+				index++;			
+			}		
+			
+			if(atEnd)
+			{
+				tabs.add(new Integer(gameStatePanels.size()).toString(),newPanel);
+				tabs.setSelectedIndex(tabs.getComponentCount()-1);
+			}
+			
+			gameStatePanels.add(newPanel);
+		} catch(Exception ex) {
+			System.err.println("Visualization failed for: "+gameName);
 		}
-		
-		gameStatePanels.add(newPanel);
 	}
 
 	private void observe(ServerTimeEvent event)

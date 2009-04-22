@@ -24,7 +24,7 @@ public class FileUtils {
 		}
 		catch(Exception ex)
 		{
-			ex.printStackTrace();
+			//ex.printStackTrace();
 			return "";
 		}
 	}
