@@ -56,7 +56,7 @@ public class ProjectSearcher {
 		
 		List<String> rval = new ArrayList<String>();
 		String CP = System.getProperty(("java.class.path"));
-		CP = CP.split(";")[0];
+		CP = CP.split(System.getProperty("path.separator"))[0];
 		File f = new File(CP);
 		Stack<File> toProcess = new Stack<File>();
 		toProcess.add(f);
