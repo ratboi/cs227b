@@ -1,8 +1,6 @@
 package player.gamer.statemachine.reflex.easy;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import apps.player.detail.DetailPanel;
 
