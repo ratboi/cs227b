@@ -22,6 +22,7 @@ import util.statemachine.prover.cache.CachedProverStateMachine;
 public class EasyGamer extends StateMachineGamer {
 	
 	private int statesExpanded;
+	Map<MachineState, Integer> stateTerminalGoals = new HashMap<MachineState, Integer>();
 
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
@@ -38,7 +39,6 @@ public class EasyGamer extends StateMachineGamer {
 		MachineState currentState = getCurrentState();
 		Role role = getRole();
 		Map<Role, Integer> roleIndices = stateMachine.getRoleIndices();
-		Map<MachineState, Integer> stateTerminalGoals = new HashMap<MachineState, Integer>();
 
 		List<Move> legalMoves = stateMachine.getLegalMoves(currentState, role);
 		List<List<Move>> moves = stateMachine.getLegalJointMoves(currentState);
