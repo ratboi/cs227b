@@ -7,7 +7,6 @@ import util.statemachine.exceptions.MoveDefinitionException;
 
 public class OpponentFocusHeuristic implements Heuristic {
 
-	@Override
 	public double eval(StateMachine stateMachine, MachineState state, Role role)
 			throws MoveDefinitionException {
 		int numTotalJointMoves = stateMachine.getLegalJointMoves(state).size();

@@ -14,7 +14,6 @@ public class MonteCarloHeuristic implements Heuristic {
 
 	public static final int NUM_CHARGES = 10;
 	
-	@Override
 	public double eval(StateMachine stateMachine, MachineState state, Role role)
 			throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 		MachineState currState = state;

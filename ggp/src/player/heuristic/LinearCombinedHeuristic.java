@@ -9,7 +9,6 @@ import util.statemachine.exceptions.TransitionDefinitionException;
 
 public class LinearCombinedHeuristic implements Heuristic {
 	
-	@Override
 	public double eval(StateMachine stateMachine, MachineState state, Role role)
 			throws MoveDefinitionException, TransitionDefinitionException,
 			GoalDefinitionException {
