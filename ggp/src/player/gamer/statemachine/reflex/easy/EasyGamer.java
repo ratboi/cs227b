@@ -1,6 +1,5 @@
 package player.gamer.statemachine.reflex.easy;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,9 +19,6 @@ import util.statemachine.exceptions.TransitionDefinitionException;
 import util.statemachine.prover.cache.CachedProverStateMachine;
 
 public class EasyGamer extends StateMachineGamer {
-	
-	private int statesExpanded;
-	Map<MachineState, Integer> stateTerminalGoals = new HashMap<MachineState, Integer>();
 
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
@@ -33,56 +29,47 @@ public class EasyGamer extends StateMachineGamer {
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		statesExpanded = 0;
 		long start = System.currentTimeMillis();
-		StateMachine stateMachine = getStateMachine();
-		MachineState currentState = getCurrentState();
-		Role role = getRole();
-		Map<Role, Integer> roleIndices = stateMachine.getRoleIndices();
-
-		List<Move> legalMoves = stateMachine.getLegalMoves(currentState, role);
-		List<List<Move>> moves = stateMachine.getLegalJointMoves(currentState);
-		
-		int maxGoal = 0;
-		Move selection = null;
-		
-		statesExpanded++;
-		for (List<Move> move : moves) {
-			MachineState nextState = stateMachine.getNextState(currentState, move);
-			int goal = getTerminalGoal(stateMachine, nextState, stateTerminalGoals);
-			if (goal >= maxGoal) {
-				maxGoal = goal;
-				selection = move.get(roleIndices.get(role));
-			}
-		}
-		
+		List<Move> legalMoves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
+		Move selection = getMinimaxMove(getStateMachine(), getCurrentState(), getRole());
 		long stop = System.currentTimeMillis();
 
 		notifyObservers(new ReflexMoveSelectionEvent(legalMoves, selection, stop - start));
-		System.out.println(statesExpanded);
+		return selection;
+	}
+
+	private Move getMinimaxMove(StateMachine stateMachine, MachineState currentState, Role role) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
+		int maxScore = -1;
+		Move selection = null;
+		for (Move move : stateMachine.getLegalMoves(currentState, role)) {
+			int score = getMinScore(stateMachine, currentState, role, move);
+			if (score >= maxScore) {
+				maxScore = score;
+				selection = move;
+			}
+		}
 		return selection;
 	}
 	
-	private int getTerminalGoal(StateMachine stateMachine, MachineState currentState, Map<MachineState, Integer> stateTerminalGoals) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
-		if (stateMachine.isTerminal(currentState)) {
-			int goal = stateMachine.getGoal(currentState, getRole());
-			stateTerminalGoals.put(currentState, goal);
-			return goal;
+	private int getMinScore(StateMachine machine, MachineState currentState, Role role, Move move) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+		int minScore = 101;
+		for (List<Move> jointMove : machine.getLegalJointMoves(currentState, role, move)) {
+			MachineState nextState = machine.getNextState(currentState, jointMove);
+			minScore = Math.min(minScore, getMaxScore(machine, nextState, role));
 		}
-		if (stateTerminalGoals.containsKey(currentState)) {
-			return stateTerminalGoals.get(currentState);
-		}
-		stateTerminalGoals.put(currentState, -1); // place in map will detect cycles if we see this state again
-		statesExpanded++;
-		int maxGoal = 0;
-		List<List<Move>> moves = stateMachine.getLegalJointMoves(currentState);		
-		for (List<Move> move : moves) {
-			MachineState nextState = stateMachine.getNextState(currentState, move);
-			maxGoal = Math.max(maxGoal, getTerminalGoal(stateMachine, nextState, stateTerminalGoals));
-		}
-		return maxGoal;
+		return minScore;
 	}
-
+	
+	private int getMaxScore(StateMachine machine, MachineState state, Role role) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
+		if (machine.isTerminal(state))
+			return machine.getGoal(state, role);
+		int maxScore = -1;
+		for (Move move : machine.getLegalMoves(state, role)) {
+			maxScore = Math.max(maxScore, getMinScore(machine, state, role, move));
+		}
+		return maxScore;
+	}
+	
 	@Override
 	public StateMachine getInitialStateMachine() {
 		return new CachedProverStateMachine();
