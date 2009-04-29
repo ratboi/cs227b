@@ -19,7 +19,6 @@ public class LinearCombinedHeuristic implements Heuristic {
 		this.weights = weights;
 	}
 	
-	@Override
 	public double eval(StateMachine stateMachine, MachineState state, Role role)
 			throws MoveDefinitionException, TransitionDefinitionException,
 			GoalDefinitionException {

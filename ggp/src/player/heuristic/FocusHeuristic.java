@@ -7,7 +7,6 @@ import util.statemachine.exceptions.MoveDefinitionException;
 
 public class FocusHeuristic implements Heuristic {
 
-	@Override
 	public double eval(StateMachine stateMachine, MachineState state, Role role)
 			throws MoveDefinitionException {
 		return 1.0/(stateMachine.getLegalMoves(state, role).size() + 1);
