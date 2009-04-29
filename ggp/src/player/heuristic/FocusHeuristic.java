@@ -9,7 +9,7 @@ public class FocusHeuristic implements Heuristic {
 
 	public double eval(StateMachine stateMachine, MachineState state, Role role)
 			throws MoveDefinitionException {
-		return 1.0/(stateMachine.getLegalMoves(state, role).size() + 1);
+		return MAX_SCORE/(stateMachine.getLegalMoves(state, role).size() + 1);
 	}
 
 }

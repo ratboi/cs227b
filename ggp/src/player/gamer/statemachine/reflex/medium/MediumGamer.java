@@ -1,6 +1,7 @@
 package player.gamer.statemachine.reflex.medium;
 
 import java.util.List;
+import java.util.ArrayList;
 
 import apps.player.detail.DetailPanel;
 
@@ -19,13 +20,25 @@ import util.statemachine.prover.cache.CachedProverStateMachine;
 
 public class MediumGamer extends StateMachineGamer {
 
-	public final int MAX_LEVEL = 2;
-	public Heuristic heuristic = new MobilityHeuristic();
+	public final int MAX_LEVEL = 1;
+	public Heuristic heuristic;
 	
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
-	{
-		((MobilityHeuristic) heuristic).setMaxMobility(getStateMachine(), getCurrentState(), getRole(), MAX_LEVEL);
+	{/*
+		MobilityHeuristic mobilityHeuristic = new MobilityHeuristic();
+		OpponentFocusHeuristic opponentFocusHeuristic = new OpponentFocusHeuristic();
+		mobilityHeuristic.setMaxMobility(getStateMachine(), getCurrentState(), getRole(), MAX_LEVEL);
+		ArrayList<Heuristic> heuristics = new ArrayList<Heuristic>();
+		heuristics.add(mobilityHeuristic);
+		heuristics.add(opponentFocusHeuristic);
+		ArrayList<Double> weights = new ArrayList<Double>();
+		weights.add(0.5);
+		weights.add(0.5);*/
+		
+		//heuristic = new LinearCombinedHeuristic(heuristics, weights);
+		
+		heuristic = new MonteCarloHeuristic();
 	}
 
 	@Override

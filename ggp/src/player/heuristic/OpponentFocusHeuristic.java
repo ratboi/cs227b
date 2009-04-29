@@ -14,7 +14,7 @@ public class OpponentFocusHeuristic implements Heuristic {
 		if (numTotalJointMoves == 0) {
 			numTotalJointMoves = 1;
 		}
-		return (double) numYourMoves / numTotalJointMoves;
+		return MAX_SCORE * numYourMoves / numTotalJointMoves;
 	}
 
 }
