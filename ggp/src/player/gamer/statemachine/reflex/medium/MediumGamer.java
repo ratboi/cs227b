@@ -66,8 +66,11 @@ public class MediumGamer extends StateMachineGamer {
 		System.out.println("level " + level);
 		if (machine.isTerminal(state))
 			return machine.getGoal(state, role);
-		if (level > MAX_LEVEL)
-			return heuristic.eval(machine, state, role);
+		if (level > MAX_LEVEL) {
+			double heuristicScore = heuristic.eval(machine, state, role);
+			System.out.println("heuristic score " + heuristicScore);
+			return heuristicScore;
+		}
 		double maxScore = -1.0;
 		for (Move move : machine.getLegalMoves(state, role)) {
 			maxScore = Math.max(maxScore, getMinScore(machine, state, role, move, level));
