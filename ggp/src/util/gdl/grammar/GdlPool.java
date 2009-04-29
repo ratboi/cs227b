@@ -18,7 +18,7 @@ public final class GdlPool
 	private static final Map<GdlSentence, Map<List<GdlLiteral>, GdlRule>> rulePool = new HashMap<GdlSentence, Map<List<GdlLiteral>, GdlRule>>();
 	private static final Map<String, GdlVariable> variablePool = new HashMap<String, GdlVariable>();
 
-	public static GdlConstant getConstant(String value)
+	public synchronized static GdlConstant getConstant(String value)
 	{
 		if (!constantPool.containsKey(value))
 		{
@@ -27,7 +27,7 @@ public final class GdlPool
 		return constantPool.get(value);
 	}
 
-	public static GdlDistinct getDistinct(GdlTerm arg1, GdlTerm arg2)
+	public synchronized static GdlDistinct getDistinct(GdlTerm arg1, GdlTerm arg2)
 	{
 		if (!distinctPool.containsKey(arg1))
 		{
@@ -41,12 +41,12 @@ public final class GdlPool
 		return bucket.get(arg2);
 	}
 
-	public static GdlFunction getFunction(GdlConstant name)
+	public synchronized static GdlFunction getFunction(GdlConstant name)
 	{
 		return getFunction(name, new ArrayList<GdlTerm>());
 	}
 
-	public static GdlFunction getFunction(GdlConstant name, GdlTerm[] body)
+	public synchronized static GdlFunction getFunction(GdlConstant name, GdlTerm[] body)
 	{
 		List<GdlTerm> list = new ArrayList<GdlTerm>(body.length);
 		for (GdlTerm term : body)
@@ -57,7 +57,7 @@ public final class GdlPool
 		return getFunction(name, list);
 	}
 
-	public static GdlFunction getFunction(GdlConstant name, List<GdlTerm> body)
+	public synchronized static GdlFunction getFunction(GdlConstant name, List<GdlTerm> body)
 	{
 		if (!functionPool.containsKey(name))
 		{
@@ -71,7 +71,7 @@ public final class GdlPool
 		return bucket.get(body);
 	}
 
-	public static GdlNot getNot(GdlLiteral body)
+	public synchronized static GdlNot getNot(GdlLiteral body)
 	{
 		if (!notPool.containsKey(body))
 		{
@@ -80,7 +80,7 @@ public final class GdlPool
 		return notPool.get(body);
 	}
 
-	public static GdlOr getOr(GdlLiteral[] disjuncts)
+	public synchronized static GdlOr getOr(GdlLiteral[] disjuncts)
 	{
 		List<GdlLiteral> list = new ArrayList<GdlLiteral>(disjuncts.length);
 		for (GdlLiteral literal : disjuncts)
@@ -91,7 +91,7 @@ public final class GdlPool
 		return getOr(list);
 	}
 
-	public static GdlOr getOr(List<GdlLiteral> disjuncts)
+	public synchronized static GdlOr getOr(List<GdlLiteral> disjuncts)
 	{
 		if (!orPool.containsKey(disjuncts))
 		{
@@ -100,7 +100,7 @@ public final class GdlPool
 		return orPool.get(disjuncts);
 	}
 
-	public static GdlProposition getProposition(GdlConstant name)
+	public synchronized static GdlProposition getProposition(GdlConstant name)
 	{
 		if (!propositionPool.containsKey(name))
 		{
@@ -109,12 +109,12 @@ public final class GdlPool
 		return propositionPool.get(name);
 	}
 
-	public static GdlRelation getRelation(GdlConstant name)
+	public synchronized static GdlRelation getRelation(GdlConstant name)
 	{
 		return getRelation(name, new ArrayList<GdlTerm>());
 	}
 
-	public static GdlRelation getRelation(GdlConstant name, GdlTerm[] body)
+	public synchronized static GdlRelation getRelation(GdlConstant name, GdlTerm[] body)
 	{
 		List<GdlTerm> list = new ArrayList<GdlTerm>(body.length);
 		for (GdlTerm term : body)
@@ -125,7 +125,7 @@ public final class GdlPool
 		return getRelation(name, list);
 	}
 
-	public static GdlRelation getRelation(GdlConstant name, List<GdlTerm> body)
+	public synchronized static GdlRelation getRelation(GdlConstant name, List<GdlTerm> body)
 	{
 		if (!relationPool.containsKey(name))
 		{
@@ -139,12 +139,12 @@ public final class GdlPool
 		return bucket.get(body);
 	}
 
-	public static GdlRule getRule(GdlSentence head)
+	public synchronized static GdlRule getRule(GdlSentence head)
 	{
 		return getRule(head, new ArrayList<GdlLiteral>());
 	}
 
-	public static GdlRule getRule(GdlSentence head, GdlLiteral[] body)
+	public synchronized static GdlRule getRule(GdlSentence head, GdlLiteral[] body)
 	{
 		List<GdlLiteral> list = new ArrayList<GdlLiteral>(body.length);
 		for (GdlLiteral literal : body)
@@ -155,7 +155,7 @@ public final class GdlPool
 		return getRule(head, list);
 	}
 
-	public static GdlRule getRule(GdlSentence head, List<GdlLiteral> body)
+	public synchronized static GdlRule getRule(GdlSentence head, List<GdlLiteral> body)
 	{
 		if (!rulePool.containsKey(head))
 		{
@@ -169,7 +169,7 @@ public final class GdlPool
 		return bucket.get(body);
 	}
 
-	public static GdlVariable getVariable(String name)
+	public synchronized static GdlVariable getVariable(String name)
 	{
 		if (!variablePool.containsKey(name))
 		{

@@ -11,7 +11,7 @@ public final class SymbolPool
 	private final static Map<String, SymbolAtom> atomPool = new HashMap<String, SymbolAtom>();
 	private final static Map<List<Symbol>, SymbolList> listPool = new HashMap<List<Symbol>, SymbolList>();
 
-	public static SymbolAtom getAtom(String value)
+	public synchronized static SymbolAtom getAtom(String value)
 	{
 		if (!atomPool.containsKey(value))
 		{
@@ -20,7 +20,7 @@ public final class SymbolPool
 		return atomPool.get(value);
 	}
 
-	public static SymbolList getList(List<Symbol> contents)
+	public synchronized static SymbolList getList(List<Symbol> contents)
 	{
 		if (!listPool.containsKey(contents))
 		{
@@ -29,7 +29,7 @@ public final class SymbolPool
 		return listPool.get(contents);
 	}
 
-	public static SymbolList getList(Symbol[] contents)
+	public synchronized static SymbolList getList(Symbol[] contents)
 	{
 		List<Symbol> list = new ArrayList<Symbol>(contents.length);
 		for (Symbol symbol : contents)
