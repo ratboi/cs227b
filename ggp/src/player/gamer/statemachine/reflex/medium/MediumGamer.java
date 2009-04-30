@@ -25,7 +25,8 @@ public class MediumGamer extends StateMachineGamer {
 	
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
-	{/*
+	{
+		/*
 		MobilityHeuristic mobilityHeuristic = new MobilityHeuristic();
 		OpponentFocusHeuristic opponentFocusHeuristic = new OpponentFocusHeuristic();
 		mobilityHeuristic.setMaxMobility(getStateMachine(), getCurrentState(), getRole(), MAX_LEVEL);
@@ -34,9 +35,9 @@ public class MediumGamer extends StateMachineGamer {
 		heuristics.add(opponentFocusHeuristic);
 		ArrayList<Double> weights = new ArrayList<Double>();
 		weights.add(0.5);
-		weights.add(0.5);*/
+		weights.add(0.5);
 		
-		//heuristic = new LinearCombinedHeuristic(heuristics, weights);
+		heuristic = new LinearCombinedHeuristic(heuristics, weights);*/
 		
 		heuristic = new MonteCarloHeuristic();
 	}
@@ -76,12 +77,12 @@ public class MediumGamer extends StateMachineGamer {
 	}
 	
 	private double getMaxScore(StateMachine machine, MachineState state, Role role, int level) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
-		System.out.println("level " + level);
+		//System.out.println("level " + level);
 		if (machine.isTerminal(state))
 			return machine.getGoal(state, role);
 		if (level > MAX_LEVEL) {
 			double heuristicScore = heuristic.eval(machine, state, role);
-			System.out.println("heuristic score " + heuristicScore);
+			//System.out.println("heuristic score " + heuristicScore);
 			return heuristicScore;
 		}
 		double maxScore = -1.0;
