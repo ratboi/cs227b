@@ -26,11 +26,10 @@ public class MediumGamer extends StateMachineGamer {
 
 	public final int MAX_LEVEL = 1;
 	public static final int BUFFER_TIME = 50;
-	public Heuristic heuristic;
-	Map<MachineState, Double> stateValues;
-	public long start = -1;
-	public long stop = 0;
-	public boolean terminated = false;
+	private Heuristic heuristic;
+	private Map<MachineState, Double> stateValues;
+	private boolean foundMove = false;
+	private boolean stoppedEarly = false;
 	
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
@@ -55,26 +54,33 @@ public class MediumGamer extends StateMachineGamer {
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		start = System.currentTimeMillis();
+		//System.out.println("this is the timeout: " + timeout);
+		long start = System.currentTimeMillis();
+		//System.out.println("this is the start: " + start);
 		FindMoveThread move = new FindMoveThread();
 		move.start();
 		
-		 ActionListener taskPerformer = new ActionListener() {
-		      public void actionPerformed(ActionEvent e) {
-		          stop = start;
-		      }
-		  };
-		Timer t = new Timer((int)timeout-(int)start - BUFFER_TIME, taskPerformer);
+		ActionListener taskPerformer = new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				stoppedEarly = true;
+				//System.out.println("Early Termination!");
+			}
+		};
+		Timer t = new Timer((int) timeout - (int) start - BUFFER_TIME, taskPerformer);
 		t.setRepeats(false);
 		t.start();
-		while (!terminated);
+		while (!foundMove);
+		t.stop();
 		
 		Move selection = move.getSelection();
 		List<Move> legalMoves = move.getLegalMoves();
 		
 		long end = System.currentTimeMillis();
+		//System.out.println("this is the end: " + end);
         notifyObservers(new ReflexMoveSelectionEvent(legalMoves, selection, end - start));
-        terminated = false;
+        foundMove = false;
+        stoppedEarly = false;
+        //System.out.println("about to return the selection\n");
         return selection;
 	}
 	
@@ -101,7 +107,7 @@ public class MediumGamer extends StateMachineGamer {
 			} catch (MoveDefinitionException e) {
 			} catch (TransitionDefinitionException e) {}
 			
-			terminated = true;
+			foundMove = true;
 	    }
 
 	}
@@ -110,7 +116,9 @@ public class MediumGamer extends StateMachineGamer {
 		double maxScore = -1;
 		Move selection = null;
 		for (Move move : stateMachine.getLegalMoves(currentState, role)) {
-			if (start-stop==0) return selection;
+			if (stoppedEarly) {
+				return selection;
+			}
 			double score = getMinScore(stateMachine, currentState, role, move, 0);
 			if (score >= maxScore) {
 				maxScore = score;
@@ -122,10 +130,8 @@ public class MediumGamer extends StateMachineGamer {
 	
 	private double getMinScore(StateMachine machine, MachineState currentState, Role role, Move move, int level) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		double minScore = 101;
-		long started = System.currentTimeMillis();
 		for (List<Move> jointMove : machine.getLegalJointMoves(currentState, role, move)) {
-			if (start-stop==0) {
-				System.out.println("Early Termination!");
+			if (stoppedEarly) {
 				return minScore;
 			}
 			MachineState nextState = machine.getNextState(currentState, jointMove);
@@ -152,6 +158,8 @@ public class MediumGamer extends StateMachineGamer {
 		}
 		double maxScore = -1.0;
 		for (Move move : machine.getLegalMoves(state, role)) {
+			if (stoppedEarly)
+				return maxScore;
 			maxScore = Math.max(maxScore, getMinScore(machine, state, role, move, level));
 		}
 		return maxScore;
