@@ -86,8 +86,8 @@ public final class ServerPanel extends JPanel
 		sourceButton = new JButton(sourceButtonMethod(this));
 		sourceTextField = new JTextField("Click to select a .kif file");
 		matchIdTextField = new JTextField("Match.default");
-		startClockTextField = new JTextField("10");
-		playClockTextField = new JTextField("10");
+		startClockTextField = new JTextField("240");
+		playClockTextField = new JTextField("20");
 		managerPanel = new JPanel(new GridBagLayout());
 		matchesTabbedPane = new JTabbedPane();
 
