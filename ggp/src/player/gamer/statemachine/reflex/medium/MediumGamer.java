@@ -1,7 +1,11 @@
 package player.gamer.statemachine.reflex.medium;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import javax.swing.Timer;
 
 import apps.player.detail.DetailPanel;
 
@@ -21,7 +25,12 @@ import util.statemachine.prover.cache.CachedProverStateMachine;
 public class MediumGamer extends StateMachineGamer {
 
 	public final int MAX_LEVEL = 1;
+	public static final int BUFFER_TIME = 50;
 	public Heuristic heuristic;
+	Map<MachineState, Double> stateValues;
+	public long start = -1;
+	public long stop = 0;
+	public boolean terminated = false;
 	
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
@@ -40,24 +49,68 @@ public class MediumGamer extends StateMachineGamer {
 		heuristic = new LinearCombinedHeuristic(heuristics, weights);*/
 		
 		heuristic = new MonteCarloHeuristic();
+		stateValues = new HashMap<MachineState, Double>();
 	}
 
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		long start = System.currentTimeMillis();
-		List<Move> legalMoves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
-		Move selection = getMinimaxMove(getStateMachine(), getCurrentState(), getRole());
-		long stop = System.currentTimeMillis();
-
-		notifyObservers(new ReflexMoveSelectionEvent(legalMoves, selection, stop - start));
-		return selection;
+		start = System.currentTimeMillis();
+		FindMoveThread move = new FindMoveThread();
+		move.start();
+		
+		 ActionListener taskPerformer = new ActionListener() {
+		      public void actionPerformed(ActionEvent e) {
+		          stop = start;
+		      }
+		  };
+		Timer t = new Timer((int)timeout-(int)start - BUFFER_TIME, taskPerformer);
+		t.setRepeats(false);
+		t.start();
+		while (!terminated);
+		
+		Move selection = move.getSelection();
+		List<Move> legalMoves = move.getLegalMoves();
+		
+		long end = System.currentTimeMillis();
+        notifyObservers(new ReflexMoveSelectionEvent(legalMoves, selection, end - start));
+        terminated = false;
+        return selection;
 	}
+	
+	public class FindMoveThread extends Thread {
+		private Move selection;
+		private List<Move> legalMoves;
+		
+		public Move getSelection() {
+			return selection;
+		}
+		
+		public List<Move> getLegalMoves() {
+			return legalMoves;
+		}
+		
+	    public void run() {
+	    	try {
+				legalMoves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
+			} catch (MoveDefinitionException e1) {}
+			
+			try {
+				selection = getMinimaxMove(getStateMachine(), getCurrentState(), getRole());
+			} catch (GoalDefinitionException e) {
+			} catch (MoveDefinitionException e) {
+			} catch (TransitionDefinitionException e) {}
+			
+			terminated = true;
+	    }
 
+	}
+	
 	private Move getMinimaxMove(StateMachine stateMachine, MachineState currentState, Role role) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
 		double maxScore = -1;
 		Move selection = null;
 		for (Move move : stateMachine.getLegalMoves(currentState, role)) {
+			if (start-stop==0) return selection;
 			double score = getMinScore(stateMachine, currentState, role, move, 0);
 			if (score >= maxScore) {
 				maxScore = score;
@@ -69,9 +122,21 @@ public class MediumGamer extends StateMachineGamer {
 	
 	private double getMinScore(StateMachine machine, MachineState currentState, Role role, Move move, int level) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		double minScore = 101;
+		long started = System.currentTimeMillis();
 		for (List<Move> jointMove : machine.getLegalJointMoves(currentState, role, move)) {
+			if (start-stop==0) {
+				System.out.println("Early Termination!");
+				return minScore;
+			}
 			MachineState nextState = machine.getNextState(currentState, jointMove);
-			minScore = Math.min(minScore, getMaxScore(machine, nextState, role, level + 1));
+			double score;
+			if (stateValues.containsKey(nextState))
+				score = stateValues.get(nextState);
+			else {
+				score = getMaxScore(machine, nextState, role, level + 1);
+				stateValues.put(nextState, score);
+			}
+			minScore = Math.min(minScore, score);
 		}
 		return minScore;
 	}
