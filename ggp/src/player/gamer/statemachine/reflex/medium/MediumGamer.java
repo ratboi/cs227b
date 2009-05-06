@@ -128,13 +128,15 @@ public class MediumGamer extends StateMachineGamer {
 		return selection;
 	}
 	
-	private double getMinScore(StateMachine machine, MachineState currentState, Role role, Move move, int level) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+	private double getMinScore(StateMachine machine, MachineState state, Role role, Move move, int level) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+		if (machine.isTerminal(state))
+			return machine.getGoal(state, role);
 		double minScore = 101;
-		for (List<Move> jointMove : machine.getLegalJointMoves(currentState, role, move)) {
+		for (List<Move> jointMove : machine.getLegalJointMoves(state, role, move)) {
 			if (stoppedEarly) {
 				return minScore;
 			}
-			MachineState nextState = machine.getNextState(currentState, jointMove);
+			MachineState nextState = machine.getNextState(state, jointMove);
 			double score;
 			if (stateValues.containsKey(nextState))
 				score = stateValues.get(nextState);
