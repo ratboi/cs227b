@@ -7,6 +7,8 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
@@ -82,14 +84,17 @@ public final class PlayerPanel extends JPanel
 		playersTabbedPane = new JTabbedPane();
 
 		portTextField.setColumns(15);
-
+		
+		Set<String> excludedGamers = new HashSet<String>();
+		excludedGamers.add("Human");
 		for(Class<?> gamer : gamers)
 		{
 			Gamer g;
 			try {
 				g = (Gamer) gamer.newInstance();
 			} catch(Exception ex) { throw new RuntimeException(ex); }
-			typeComboBox.addItem(g.getName());
+			if (!excludedGamers.contains(g.getName()))
+				typeComboBox.addItem(g.getName());
 		}
 
 		JPanel managerPanel = new JPanel(new GridBagLayout());
