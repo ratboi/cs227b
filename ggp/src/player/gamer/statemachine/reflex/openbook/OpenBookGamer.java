@@ -2,6 +2,7 @@ package player.gamer.statemachine.reflex.openbook;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -26,13 +27,17 @@ import util.statemachine.prover.cache.CachedProverStateMachine;
 public class OpenBookGamer extends StateMachineGamer {
 
 	public final int MAX_LEVEL = 2;
+	public final int NODES_TO_TERMINAL = 2;
 	public static final int BUFFER_TIME = 1000;
 	private Heuristic heuristic;
 	private Map<MachineState, Double> stateValues;
 	private boolean foundMove = false;
 	private boolean stoppedEarly = false;
+	public double maxGoalValue = -1;
+	public double minGoalValue = 101;
 	private FindMoveThread move;
 	private Map<MachineState, Move> openBook = new HashMap<MachineState, Move>();
+	private Map<MachineState, Double> endBook = new HashMap<MachineState, Double>();
 	private int roleIndex;
 	
 	@Override
@@ -54,8 +59,11 @@ public class OpenBookGamer extends StateMachineGamer {
 		heuristic = new MonteCarloHeuristic();
 		stateValues = new HashMap<MachineState, Double>();
 		
+		
 		OpenBookThread openBookThread = new OpenBookThread(getStateMachine(), getCurrentState(), getRole(), timeout);
 		openBookThread.start();
+		EndBookThread endBookThread = new EndBookThread(getStateMachine(), getCurrentState(), getRole(), timeout);
+		endBookThread.start();
 		while (System.currentTimeMillis() < timeout);
 		
 		// headstart
@@ -131,7 +139,7 @@ public class OpenBookGamer extends StateMachineGamer {
 				// only cache the state if we're in the safe zone, otherwise 'bestMove' could just be junk
 				if (System.currentTimeMillis() < timeout - BUFFER) {
 					openBook.put(state, bestMove);
-					System.out.println("put some stuff into open book");
+					//System.out.println("put some stuff into open book");
 				}
 			} catch (Exception e) {
 				System.err.println("exception when finding best move in the open book thread");
@@ -150,6 +158,135 @@ public class OpenBookGamer extends StateMachineGamer {
 				maxLevel++;
 				System.out.println("max level of open book search is now: " + maxLevel);
 			}
+		}
+	}
+	
+	
+	public class EndBookThread extends Thread {
+		StateMachine machine;
+		MachineState startState;
+		Role role;
+		private long timeout;
+		private final long BUFFER = 500;
+
+		public EndBookThread(StateMachine machine, MachineState startState, Role role, long timeout) throws MoveDefinitionException, TransitionDefinitionException {
+			this.startState = startState;
+			this.timeout = timeout;
+			this.machine = machine;
+			this.role = role;
+		}
+
+		public void run() {
+			int maxLevel = 1;
+			findTerminalNodes(startState, heuristic, 1, maxLevel, timeout);
+		}
+		public void findTerminalNodes(MachineState startState, Heuristic heuristic, int level, int maxLevel, long timeout) {
+			HashSet<MachineState> terminals = new HashSet<MachineState>();
+			try {
+				while (System.currentTimeMillis() < timeout - BUFFER) {
+					MachineState state = startState;
+					MachineState lastState = startState;
+					MachineState twoStatesEarlier = startState;
+					while (!machine.isTerminal(state)) {
+						twoStatesEarlier = lastState;
+						lastState = state;
+						state = machine.getRandomNextState(state);
+					}
+
+					if (terminals.add(state)) {
+						Thread workBackwards = new ReverseThread(machine, lastState, role, timeout);
+						workBackwards.start();
+
+						int value = machine.getGoal(state, role);
+						System.out.println("New Terminal state found with value " + value);
+						if (value>maxGoalValue) maxGoalValue = value;
+						if (value<minGoalValue) minGoalValue = value;
+					}
+					else {
+						System.out.println("already found!");
+					}
+				}
+				System.out.println("closed book is past time limit, breaking early");
+
+			}
+			catch (Exception e) {
+				System.err.println("Exception in endbook depth charge.");
+			}
+		}
+	}
+
+	public class ReverseThread extends Thread {
+		StateMachine machine;
+		MachineState startState;
+		Role role;
+		private long timeout;
+		private final long BUFFER = 500;
+
+		public ReverseThread(StateMachine machine, MachineState startState, Role role, long timeout) throws MoveDefinitionException, TransitionDefinitionException {
+			this.startState = startState;
+			this.timeout = timeout;
+			this.machine = machine;
+			this.role = role;
+		}
+		
+		private double getMinScore(MachineState state, Role role, Move move, List<MachineState> viewed) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+			double minScore = 101;
+			MachineState trueNextState = null;
+			for (List<Move> jointMove : machine.getLegalJointMoves(state, role, move)) {
+				if (System.currentTimeMillis() > timeout - BUFFER)
+					break;
+				MachineState nextState = machine.getNextState(state, jointMove);
+				double score = getMaxScore(nextState, role, viewed);
+				if (score < minScore) {
+					minScore = score;
+					trueNextState = nextState;
+				}
+			}
+			//viewed.add(trueNextState);
+			return minScore;
+		}
+		
+		private double getMaxScore(MachineState state, Role role, List<MachineState> viewed) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
+			if (machine.isTerminal(state))
+				return machine.getGoal(state, role);
+			if (System.currentTimeMillis() > timeout - BUFFER)
+				return -1.0;
+			double maxScore = findBestMove(state, role, viewed);
+			return maxScore;
+		}
+		
+		private double findBestMove(MachineState state, Role role, List<MachineState> viewed) {
+			double maxScore = -1.0;
+			viewed.add(state);
+			try {
+				//System.out.println("States found? " + viewed.size());
+				// find and cache best move for the current state
+				// Move bestMove = null;
+				for (Move move : machine.getLegalMoves(state, role)) {
+					if (System.currentTimeMillis() > timeout - BUFFER)
+						break;
+					double score = getMinScore(state, role, move, viewed);
+					if (score > maxScore) {
+						maxScore = score;
+			//			bestMove = move;
+					}
+				}
+			} catch (Exception e) {
+				System.err.println("exception when finding best move in the end book thread");
+			}
+			return maxScore;
+		}
+		
+		
+		public void run() {
+			//\System.out.println("ReverseThread started!");
+			List<MachineState> leadsToTerminal = new ArrayList<MachineState>();
+			double terminalValue = findBestMove(startState, role, leadsToTerminal);
+			endBook.put(startState, terminalValue);
+			//for (MachineState m : leadsToTerminal) {
+			//	endBook.put(m, terminalValue);
+			//}
+			System.out.println("Added new 'terminal' state with value " + terminalValue);
 		}
 	}
 
@@ -293,6 +430,10 @@ public class OpenBookGamer extends StateMachineGamer {
 		private double getMinScore(MachineState state, int level) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 			if (stateMachine.isTerminal(state))
 				return stateMachine.getGoal(state, role);
+			if (endBook.containsKey(state)) {
+				System.out.println("Found a terminal state with end book!");
+				return endBook.get(state);
+			}
 			if (level == maxLevel) {
 				double heuristicScore = heuristic.eval(stateMachine, state, role);
 				return heuristicScore;
@@ -311,6 +452,10 @@ public class OpenBookGamer extends StateMachineGamer {
 		private double getMaxScore(MachineState state, int level) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
 			if (stateMachine.isTerminal(state))
 				return stateMachine.getGoal(state, role);
+			if (endBook.containsKey(state)) {
+				System.out.println("Found a terminal state with end book!");
+				return endBook.get(state);
+			}
 			if (level == maxLevel) {
 				double heuristicScore = heuristic.eval(stateMachine, state, role);
 				return heuristicScore;

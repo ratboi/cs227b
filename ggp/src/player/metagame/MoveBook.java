@@ -2,6 +2,7 @@ package player.metagame;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -24,7 +25,7 @@ public class MoveBook {
 	private Role role;
 	private long BUFFER = 500;
 	public Map<MachineState, Move> openBook = new HashMap<MachineState, Move>();
-
+	
 	public MoveBook(StateMachine machine, Role role) {
 		this.machine = machine;
 		this.role = role;
@@ -72,7 +73,7 @@ public class MoveBook {
 			// only cache the state if we're in the safe zone, otherwise 'bestMove' could just be junk
 			if (System.currentTimeMillis() < timeout - BUFFER) {
 				openBook.put(state, bestMove);
-				System.out.println("put some stuff into open book");
+				//System.out.println("put some stuff into open book");
 			}
 		} catch (Exception e) {
 			System.err.println("exception when finding best move in the open book thread");
@@ -81,8 +82,10 @@ public class MoveBook {
 	}
 	
 	public void startOpenBookThread(MachineState startState, Heuristic heuristic, long timeout) throws MoveDefinitionException, TransitionDefinitionException {
-		OpenBookThread openBook = new OpenBookThread(startState, heuristic, timeout);
-		openBook.start();
+		//OpenBookThread openBook = new OpenBookThread(startState, heuristic, timeout);
+		//openBook.start();
+		//EndBookThread endBook = new EndBookThread(startState, heuristic, timeout);
+		//endBook.start();
 	}
 	
 	public class OpenBookThread extends Thread {
