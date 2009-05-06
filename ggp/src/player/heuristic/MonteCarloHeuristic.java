@@ -12,20 +12,26 @@ import util.statemachine.exceptions.GoalDefinitionException;
 
 public class MonteCarloHeuristic implements Heuristic {
 
-	public static final int NUM_CHARGES = 10;
+	public int numCharges = 10;
+	
+	public MonteCarloHeuristic() {}
+	
+	public MonteCarloHeuristic(int numCharges) {
+		this.numCharges = numCharges;
+	}
 	
 	public double eval(StateMachine stateMachine, MachineState state, Role role)
 			throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 		MachineState currState = state;
 		double runningTotal = 0.0;
 		
-		for (int i = 0; i < NUM_CHARGES; i++) {
+		for (int i = 0; i < numCharges; i++) {
 			while (!stateMachine.isTerminal(currState)) {
 				currState = stateMachine.getRandomNextState(currState);
 			}
 			runningTotal += stateMachine.getGoal(currState, role);
 		}
-		return runningTotal / NUM_CHARGES;
+		return runningTotal / numCharges;
 	}
 
 }
