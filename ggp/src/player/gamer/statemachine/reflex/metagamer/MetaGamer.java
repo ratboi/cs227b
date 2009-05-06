@@ -173,7 +173,7 @@ public class MetaGamer extends StateMachineGamer {
 
 	@Override
 	public String getName() {
-		return "Medium";
+		return "Metagamer";
 	}
 
 	@Override
