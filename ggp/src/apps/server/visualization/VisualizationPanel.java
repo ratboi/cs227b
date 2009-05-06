@@ -106,7 +106,7 @@ public final class VisualizationPanel extends JPanel implements Observer
 			
 			gameStatePanels.add(newPanel);
 		} catch(Exception ex) {
-			System.err.println("Visualization failed for: "+gameName);
+			System.out.println("Visualization failed for: "+gameName);
 		}
 	}
 
