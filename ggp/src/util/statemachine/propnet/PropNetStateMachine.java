@@ -113,6 +113,9 @@ public final class PropNetStateMachine extends StateMachine
 	}
 	
 	private void updateOne(Component currComp, List<Component> transitions) {
+		if (!currComp.getValue()) {
+			return;
+		}
 		for (Component comp : currComp.getOutputs()) {
 			if (comp instanceof Proposition) {
 				Proposition prop = (Proposition) comp;
@@ -129,11 +132,15 @@ public final class PropNetStateMachine extends StateMachine
 	
 	private void update(boolean clearOld) {
 		List<Component> transitions = new ArrayList<Component>();
+		List<Component> trueComps = new ArrayList<Component>();
 		// grab all propositions that are true
 		for (Component comp : propnet.getComponents()) {
 			if (comp.getValue()) {
-				updateOne(comp, transitions);
+				trueComps.add(comp);
 			}
+		}
+		for (Component comp : trueComps) {
+			updateOne(comp, transitions);
 		}
 		if (clearOld) {
 			clearValues();
