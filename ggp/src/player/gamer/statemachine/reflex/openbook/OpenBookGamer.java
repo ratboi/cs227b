@@ -23,6 +23,7 @@ import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
 import util.statemachine.prover.cache.CachedProverStateMachine;
+import util.statemachine.propnet.PropNetStateMachine;
 
 public class OpenBookGamer extends StateMachineGamer {
 
@@ -477,7 +478,7 @@ public class OpenBookGamer extends StateMachineGamer {
 	
 	@Override
 	public StateMachine getInitialStateMachine() {
-		return new CachedProverStateMachine();
+		return new PropNetStateMachine();
 	}
 
 	@Override

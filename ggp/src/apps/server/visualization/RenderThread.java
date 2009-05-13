@@ -23,6 +23,7 @@ public class RenderThread extends Thread {
 	public void run()
 	{
 		JPanel newPanel = null;
+		/*
 		try
 		{
 			String XML = s.toXML();
@@ -34,6 +35,7 @@ public class RenderThread extends Thread {
 			System.err.println("Game render error for "+gameName);
 			ex.printStackTrace();
 		}
+		*/
 		if(newPanel!=null)
 			parent.addVizPanel(newPanel, stepNum);
 	}
