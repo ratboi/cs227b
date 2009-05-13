@@ -34,15 +34,17 @@ public final class GameServer extends Thread implements Subject
 
 	private final List<Observer> observers;
 	private final List<Integer> ports;
+	private final List<String>  playerNames;
 	private List<Move> previousMoves;
 
 	private final StateMachine stateMachine;
 
-	public GameServer(Match match, List<String> hosts, List<Integer> ports)
+	public GameServer(Match match, List<String> hosts, List<Integer> ports, List<String> playerNames)
 	{
 		this.match = match;
 		this.hosts = hosts;
 		this.ports = ports;
+		this.playerNames = playerNames;
 
 		stateMachine = new ProverStateMachine();
 		stateMachine.intialize(match.getDescription());
@@ -120,7 +122,7 @@ public final class GameServer extends Thread implements Subject
 		for (int i = 0; i < hosts.size(); i++)
 		{
 			List<Move> legalMoves = stateMachine.getLegalMoves(currentState, stateMachine.getRoles().get(i));
-			threads.add(new PlayRequestThread(this, match, previousMoves, legalMoves, stateMachine.getRoles().get(i), hosts.get(i), ports.get(i)));
+			threads.add(new PlayRequestThread(this, match, previousMoves, legalMoves, stateMachine.getRoles().get(i), hosts.get(i), ports.get(i), playerNames.get(i)));
 		}
 		for (PlayRequestThread thread : threads)
 		{
@@ -142,7 +144,7 @@ public final class GameServer extends Thread implements Subject
 		List<StartRequestThread> threads = new ArrayList<StartRequestThread>(hosts.size());
 		for (int i = 0; i < hosts.size(); i++)
 		{
-			threads.add(new StartRequestThread(this, match, stateMachine.getRoles().get(i), hosts.get(i), ports.get(i)));
+			threads.add(new StartRequestThread(this, match, stateMachine.getRoles().get(i), hosts.get(i), ports.get(i), playerNames.get(i)));
 		}
 		for (StartRequestThread thread : threads)
 		{
@@ -159,7 +161,7 @@ public final class GameServer extends Thread implements Subject
 		List<StopRequestThread> threads = new ArrayList<StopRequestThread>(hosts.size());
 		for (int i = 0; i < hosts.size(); i++)
 		{
-			threads.add(new StopRequestThread(this, match, previousMoves, stateMachine.getRoles().get(i), hosts.get(i), ports.get(i)));
+			threads.add(new StopRequestThread(this, match, previousMoves, stateMachine.getRoles().get(i), hosts.get(i), ports.get(i), playerNames.get(i)));
 		}
 		for (StopRequestThread thread : threads)
 		{

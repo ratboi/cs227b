@@ -1,5 +1,7 @@
 package util.gdl.grammar;
 
+import java.util.List;
+
 public abstract class GdlSentence extends GdlLiteral
 {
 
@@ -16,5 +18,8 @@ public abstract class GdlSentence extends GdlLiteral
 	public abstract String toString();
 
 	public abstract GdlTerm toTerm();
+	
+	//TODO: remove if not needed
+	public abstract List<GdlTerm> getBody();
 
 }

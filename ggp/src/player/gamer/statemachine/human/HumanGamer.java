@@ -2,19 +2,17 @@ package player.gamer.statemachine.human;
 
 import java.util.List;
 
-import apps.player.detail.DetailPanel;
-
 import player.gamer.statemachine.StateMachineGamer;
 import player.gamer.statemachine.human.event.HumanNewMovesEvent;
 import player.gamer.statemachine.human.event.HumanTimeoutEvent;
 import player.gamer.statemachine.human.gui.HumanDetailPanel;
-import player.gamer.statemachine.reflex.gui.ReflexDetailPanel;
 import util.statemachine.Move;
 import util.statemachine.StateMachine;
 import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
 import util.statemachine.prover.cache.CachedProverStateMachine;
+import apps.player.detail.DetailPanel;
 
 public final class HumanGamer extends StateMachineGamer
 {

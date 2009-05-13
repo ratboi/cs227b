@@ -43,6 +43,11 @@ public final class GdlRule extends Gdl
 	{
 		return head;
 	}
+	
+	public List<GdlLiteral> getBody()
+	{
+		return body;
+	}
 
 	@Override
 	public boolean isGround()

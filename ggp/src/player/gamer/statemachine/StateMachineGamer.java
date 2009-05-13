@@ -14,7 +14,6 @@ import util.statemachine.StateMachine;
 import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
-import util.statemachine.prover.cache.CachedProverStateMachine;
 
 public abstract class StateMachineGamer extends Gamer
 {

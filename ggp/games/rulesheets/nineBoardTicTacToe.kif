@@ -22,18 +22,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (<= (legal xPlayer noop)
- (true (control oPlayer)))
+ (true (control oPlayer))) 
 (<= (legal xPlayer (play ?i ?j ?k ?l x))
  (true (control xPlayer))
  (not (true (currentBoard ?a ?b)))
-   (emptyCell ?i ?j ?k ?l))
+ (emptyCell ?i ?j ?k ?l))
 (<= (legal xPlayer (play ?i ?j ?k ?l x))
  (true (control xPlayer))
  (true (currentBoard ?i ?j))
-   (emptyCell ?i ?j ?k ?l))     (<= (legal xPlayer (play ?i ?j ?k ?l x))
+ (emptyCell ?i ?j ?k ?l))
+(<= (legal xPlayer (play ?i ?j ?k ?l x))        
  (true (control xPlayer))
- (currentBoardClosed)
-   (emptyCell ?i ?j ?k ?l))
+ currentBoardClosed
+ (emptyCell ?i ?j ?k ?l))
+   
 (<= (legal oPlayer noop)
  (true (control xPlayer)))
 (<= (legal oPlayer (play ?i ?j ?k ?l o))
@@ -43,10 +45,12 @@
 (<= (legal oPlayer (play ?i ?j ?k ?l o))
  (true (control oPlayer))
  (true (currentBoard ?i ?j))
-   (emptyCell ?i ?j ?k ?l))       (<= (legal oPlayer (play ?i ?j ?k ?l o))
+ (emptyCell ?i ?j ?k ?l))
+(<= (legal oPlayer (play ?i ?j ?k ?l o))
  (true (control oPlayer))
- (currentBoardClosed)
-   (emptyCell ?i ?j ?k ?l))
+ currentBoardClosed
+ (emptyCell ?i ?j ?k ?l))
+   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; NEXT Relations
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -138,23 +142,29 @@
  (index ?j)
  (index ?k)
  (col ?i ?j ?k ?mark))
-(<= (line ?mark)      (index ?i)
+(<= (line ?mark)
+ (index ?i)
  (index ?j)
  (diag ?i ?j ?mark))
- (<= (emptyCell ?i ?j ?k ?l)
+
+(<= (emptyCell ?i ?j ?k ?l)
  (index ?i)
  (index ?j)
  (index ?k)
  (index ?l)
  (not (true (mark ?i ?j ?k ?l x)))
  (not (true (mark ?i ?j ?k ?l o))))
-(<= open      (emptyCell ?i ?j ?k ?l))
+ 
+(<= open (emptyCell ?i ?j ?k ?l))
 
 (<= currentBoardClosed
  (true (currentBoard ?i ?j))
  (not (emptyCell ?i ?j ?k ?l)))
- ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Static Relations
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(index 1) (index 2) (index 3)
+(index 1) (index 2) (index 3)( base mark ( val 1 2 3 ) ( val 1 2 3 ) ( val 1 2 3 ) ( val 1 2 3 ) ( val o x ) )
+( base control ( val oplayer xplayer ) )
+( base currentboard ( val 1 2 3 ) ( val 1 2 3 ) )

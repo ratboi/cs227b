@@ -12,6 +12,7 @@ import util.gdl.grammar.GdlOr;
 import util.gdl.grammar.GdlPool;
 import util.gdl.grammar.GdlProposition;
 import util.gdl.grammar.GdlRelation;
+import util.gdl.grammar.GdlRule;
 import util.gdl.grammar.GdlSentence;
 import util.gdl.grammar.GdlTerm;
 import util.gdl.grammar.GdlVariable;
@@ -28,6 +29,11 @@ public final class Substituter
 	public static GdlSentence substitute(GdlSentence sentence, Substitution theta)
 	{
 		return substituteSentence(sentence, theta);
+	}
+	
+	public static GdlRule substitute(GdlRule rule, Substitution theta)
+	{
+		return substituteRule(rule, theta);
 	}
 
 	private static GdlConstant substituteConstant(GdlConstant constant, Substitution theta)
@@ -195,4 +201,16 @@ public final class Substituter
 		}
 	}
 
+	private static GdlRule substituteRule(GdlRule rule, Substitution theta)
+	{
+		GdlSentence head = substitute(rule.getHead(), theta);
+
+		List<GdlLiteral> body = new ArrayList<GdlLiteral>();
+		for ( GdlLiteral literal : rule.getBody() )
+		{
+			body.add(substituteLiteral(literal, theta));
+		}
+
+		return GdlPool.getRule(head, body);
+	}
 }

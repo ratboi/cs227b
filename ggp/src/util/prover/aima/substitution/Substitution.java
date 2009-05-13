@@ -58,6 +58,18 @@ public final class Substitution
 	{
 		contents.put(variable, term);
 	}
+	
+	/**
+	 * Creates an identical substitution.
+	 * 
+	 * @return A new, identical substitution.
+	 */
+	public Substitution copy()
+	{
+		Substitution copy = new Substitution();
+		copy.contents.putAll(contents);
+		return copy;
+	}
 
 	@Override
 	public String toString()

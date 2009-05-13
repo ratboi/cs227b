@@ -24,8 +24,9 @@ public final class StopRequestThread extends Thread
 	private final int port;
 	private final List<Move> previousMoves;
 	private final Role role;
+	private final String playerName;
 
-	public StopRequestThread(GameServer gameServer, Match match, List<Move> previousMoves, Role role, String host, int port)
+	public StopRequestThread(GameServer gameServer, Match match, List<Move> previousMoves, Role role, String host, int port, String playerName)
 	{
 		this.gameServer = gameServer;
 		this.match = match;
@@ -33,6 +34,7 @@ public final class StopRequestThread extends Thread
 		this.role = role;
 		this.host = host;
 		this.port = port;
+		this.playerName = playerName;
 	}
 
 	@Override
@@ -43,7 +45,7 @@ public final class StopRequestThread extends Thread
 			Socket socket = new Socket(host, port);
 			String request = (previousMoves == null) ? RequestBuilder.getStopRequest(match.getMatchId()) : RequestBuilder.getStopRequest(match.getMatchId(), previousMoves);
 
-			HttpWriter.writeAsClient(socket, request);
+			HttpWriter.writeAsClient(socket, request, playerName);
 			HttpReader.readAsClient(socket, match.getPlayClock() * 1000);
 
 			socket.close();

@@ -78,5 +78,11 @@ public final class GdlRelation extends GdlSentence
 	{
 		return GdlPool.getFunction(name, body);
 	}
+	
+	@Override
+	public List<GdlTerm> getBody()
+	{
+		return body;
+	}
 
 }

@@ -8,8 +8,7 @@ import java.net.Socket;
 
 public final class HttpWriter
 {
-
-	public static void writeAsClient(Socket socket, String data) throws IOException
+	public static void writeAsClient(Socket socket, String data, String playerName) throws IOException
 	{
 		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 		PrintWriter pw = new PrintWriter(bw);
@@ -17,7 +16,7 @@ public final class HttpWriter
 		pw.println("POST / HTTP/1.0");
 		pw.println("Accept: text/delim");
 		pw.println("Sender: GAMESERVER");
-		pw.println("Receiver: GAMEPLAYER"); //TODO: Make this be actual player name
+		pw.println("Receiver: "+playerName);
 		pw.println("Content-type: text/acl");
 		pw.println("Content-length: " + data.length());
 		pw.println();

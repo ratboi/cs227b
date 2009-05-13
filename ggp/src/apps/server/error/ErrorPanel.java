@@ -70,7 +70,7 @@ public final class ErrorPanel extends JPanel implements Observer
 		model.addRow(new String[] { role, error });
 	}
 
-	private void observe(ServerIllegalMoveEvent event)
+	private synchronized void observe(ServerIllegalMoveEvent event)
 	{
 		DefaultTableModel model = (DefaultTableModel) errorTable.getModel();
 		String role = event.getRole().toString();
@@ -79,7 +79,7 @@ public final class ErrorPanel extends JPanel implements Observer
 		model.addRow(new String[] { role, error });
 	}
 
-	private void observe(ServerTimeoutEvent event)
+	private synchronized void observe(ServerTimeoutEvent event)
 	{
 		DefaultTableModel model = (DefaultTableModel) errorTable.getModel();
 		String role = event.getRole().toString();

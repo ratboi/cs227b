@@ -57,7 +57,7 @@ public final class NetworkPanel extends JPanel implements Observer
 		}
 		else if (event instanceof GamerNewMatchEvent)
 		{
-			observe(event);
+			//observe(event);
 		}
 	}
 

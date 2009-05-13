@@ -1,12 +1,5 @@
 package apps.server.visualization;
 
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
@@ -18,7 +11,6 @@ import server.event.ServerTimeEvent;
 import util.observer.Event;
 import util.observer.Observer;
 import util.statemachine.prover.ProverMachineState;
-import util.xhtml.GameStateRenderPanel;
 
 @SuppressWarnings("serial")
 public final class VisualizationPanel extends JPanel implements Observer
@@ -27,8 +19,6 @@ public final class VisualizationPanel extends JPanel implements Observer
 	
 	private final String gameName;
 	
-	private List<JPanel> gameStatePanels = new ArrayList<JPanel>();
-	private int index = 0;
 	private JTabbedPane tabs = new JTabbedPane();
 
 	public VisualizationPanel(String gameName)
@@ -81,33 +71,36 @@ public final class VisualizationPanel extends JPanel implements Observer
 		
 	}
 	
+	private int stepCount = 1;
 	private void observe(ServerNewGameStateEvent event)
-	{
-		boolean atEnd = index == gameStatePanels.size()-1;		
+	{		
 		ProverMachineState s = event.getState();
-		
+		RenderThread rt = new RenderThread(gameName, s, this, stepCount++);
+		rt.start();
+	}
+	
+	public synchronized boolean addVizPanel(JPanel newPanel, Integer stepNum)
+	{
+		//if(tabs.getTabCount()+1 != stepNum)
+			
+		boolean atEnd = tabs.getSelectedIndex() == tabs.getTabCount()-1;
 		try
 		{
-			String XML = s.toXML();
-			String XSL = GameStateRenderPanel.getXSLfromFile(gameName+".xsl", 1); //1 because machinestate XMLs only ever have 1 state
-			JPanel newPanel = GameStateRenderPanel.getPanelfromGameXML(XML, XSL);
-			
-			if(gameStatePanels.size() > 0 && atEnd)
-			{
-				this.remove(gameStatePanels.get(index));
-				index++;			
-			}		
+			for(int i=tabs.getTabCount(); i<stepNum; i++)
+				tabs.add(new Integer(i+1).toString(), new JPanel());
+			tabs.setComponentAt(stepNum-1, newPanel);
+			tabs.setTitleAt(stepNum-1, stepNum.toString());
 			
 			if(atEnd)
-			{
-				tabs.add(new Integer(gameStatePanels.size()).toString(),newPanel);
-				tabs.setSelectedIndex(tabs.getComponentCount()-1);
+			{				
+				tabs.setSelectedIndex(tabs.getTabCount()-1);
 			}
 			
-			gameStatePanels.add(newPanel);
 		} catch(Exception ex) {
-			//System.out.println("Visualization failed for: "+gameName);
+			System.err.println("Adding rendered visualization panel failed for: "+gameName);
 		}
+		
+		return true;
 	}
 
 	private void observe(ServerTimeEvent event)

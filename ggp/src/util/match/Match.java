@@ -11,7 +11,7 @@ public final class Match
 
 	private final List<Gdl> description;
 	private final List<List<GdlSentence>> history;
-	private final String matchId;
+	private String matchId;
 	private final int playClock;
 	private final int startClock;
 
@@ -59,6 +59,11 @@ public final class Match
 	public String getMatchId()
 	{
 		return matchId;
+	}
+	
+	public void setMatchId(String matchId)
+	{
+		this.matchId = matchId; 
 	}
 
 	public int getPlayClock()

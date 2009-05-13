@@ -9,14 +9,11 @@ import util.observer.Observer;
 import util.observer.Subject;
 import util.statemachine.MachineState;
 import util.statemachine.Role;
-import util.statemachine.StateMachine;
 import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
 import util.statemachine.prover.ProverMachineState;
 import util.statemachine.prover.ProverStateMachine;
-import validator.exception.MaxDepthException;
-import validator.exception.MonotonicityException;
 
 public class HandStepper extends Thread implements Subject, Observer {
 	

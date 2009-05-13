@@ -30,11 +30,12 @@ public final class PlayRequestThread extends Thread
 	private final Match match;
 	private Move move;
 	private final int port;
+	private final String playerName;
 	private final List<Move> previousMoves;
 
 	private final Role role;
 
-	public PlayRequestThread(GameServer gameServer, Match match, List<Move> previousMoves, List<Move> legalMoves, Role role, String host, int port)
+	public PlayRequestThread(GameServer gameServer, Match match, List<Move> previousMoves, List<Move> legalMoves, Role role, String host, int port, String playerName)
 	{
 		this.gameServer = gameServer;
 		this.match = match;
@@ -43,6 +44,7 @@ public final class PlayRequestThread extends Thread
 		this.role = role;
 		this.host = host;
 		this.port = port;
+		this.playerName = playerName;
 
 		move = null;
 	}
@@ -60,8 +62,8 @@ public final class PlayRequestThread extends Thread
 			Socket socket = new Socket(host, port);
 			String request = (previousMoves == null) ? RequestBuilder.getPlayRequest(match.getMatchId()) : RequestBuilder.getPlayRequest(match.getMatchId(), previousMoves);
 
-			HttpWriter.writeAsClient(socket, request);
-			String response = HttpReader.readAsClient(socket, match.getPlayClock() * 1000);
+			HttpWriter.writeAsClient(socket, request, playerName);
+			String response = HttpReader.readAsClient(socket, match.getPlayClock() * 1000 + 1000);
 
 			move = gameServer.getStateMachine().getMoveFromSentence((GdlSentence) GdlFactory.create(response));
 			if (!new HashSet<Move>(legalMoves).contains(move))

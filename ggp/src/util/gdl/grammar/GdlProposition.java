@@ -1,5 +1,7 @@
 package util.gdl.grammar;
 
+import java.util.List;
+
 public final class GdlProposition extends GdlSentence
 {
 
@@ -44,6 +46,11 @@ public final class GdlProposition extends GdlSentence
 	public GdlTerm toTerm()
 	{
 		return name;
+	}
+
+	@Override
+	public List<GdlTerm> getBody() {
+		throw new RuntimeException("GdlPropositions have no body!");
 	}
 
 }

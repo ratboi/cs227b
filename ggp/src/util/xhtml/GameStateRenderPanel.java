@@ -1,46 +1,42 @@
 package util.xhtml;
 
 import java.awt.Dimension;
-import java.awt.EventQueue;
+import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
 
+import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.ScrollPaneConstants;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.w3c.dom.Document;
 import org.w3c.tidy.Tidy;
-import org.xhtmlrenderer.css.parser.property.PrimitivePropertyBuilders.Cursor;
-import org.xhtmlrenderer.event.DefaultDocumentListener;
 import org.xhtmlrenderer.extend.UserAgentCallback;
+import org.xhtmlrenderer.resource.ImageResource;
 import org.xhtmlrenderer.resource.XMLResource;
-import org.xhtmlrenderer.simple.FSScrollPane;
+import org.xhtmlrenderer.simple.Graphics2DRenderer;
 import org.xhtmlrenderer.simple.XHTMLPanel;
 import org.xhtmlrenderer.simple.extend.XhtmlNamespaceHandler;
 import org.xhtmlrenderer.swing.NaiveUserAgent;
-import org.xhtmlrenderer.util.GeneralUtil;
 import org.xhtmlrenderer.util.XRLog;
+import org.xml.sax.InputSource;
 
 import util.files.FileUtils;
 
@@ -50,18 +46,43 @@ import util.files.FileUtils;
  * @author Ethan
  *
  */
+@SuppressWarnings("serial")
 public class GameStateRenderPanel extends JPanel {
+	
+	private static final String baseURL = "http://visionary.stanford.edu:4000";
+	private static final Dimension defaultSize = new Dimension(600,600);
+	
+	public static Dimension getDefaultSize()
+	{
+		return defaultSize;
+	}
 	
 	public static JPanel getPanelfromGameXML(String gameXML, String XSL)
 	{
 		XHTMLPanel panel = new XHTMLPanel();
-		panel.setPreferredSize(new Dimension(600,600));
+		panel.setPreferredSize(defaultSize);
 		//setupUserAgentCallback(panel);
 		
 		String XHTML = getXHTMLfromGameXML(gameXML, XSL);
 		setPanelToDisplayGameXHTML(panel, XHTML);
-		
+		panel.getDocument();
+			
 		return panel;
+	}
+	
+	public static void renderImagefromGameXML(String gameXML, String XSL, BufferedImage backimage)
+	{		
+		Graphics2DRenderer r = new Graphics2DRenderer();
+		r.getSharedContext().setUserAgentCallback(getUAC());
+		
+		String xhtml = getXHTMLfromGameXML(gameXML, XSL);
+		InputSource is = new InputSource(new BufferedReader(new StringReader(xhtml)));
+        Document dom = XMLResource.load(is).getDocument();
+        
+		r.setDocument(dom, baseURL);
+		final Graphics2D g2 = backimage.createGraphics();
+		r.layout(g2, defaultSize);
+		r.render(g2);
 	}
 
 	public static String getXHTMLfromGameXML(String gameXML, Integer turnToShow) {
@@ -92,6 +113,7 @@ public class GameStateRenderPanel extends JPanel {
 		tidy.setXHTML(true);
 		tidy.setShowWarnings(false);
 		tidy.setQuiet(true);
+		tidy.setDropEmptyParas(false);
 		IOString tidied = new IOString();
 		tidy.parse(content.getInputStream(), tidied.getOutputStream());
 		tcontent = tidied.getString();
@@ -100,9 +122,11 @@ public class GameStateRenderPanel extends JPanel {
 	
 	public static String getXSLfromFile(String XSLfileName, Integer turnToShow)
 	{
-		String XSL = FileUtils.readFileAsString(".\\games\\stylesheets\\"+XSLfileName);
+		File xslFile = new File(new File("games", "stylesheets"), XSLfileName);
+		String XSL = FileUtils.readFileAsString(xslFile);
 		String CustomXSL = getCustomXSL(XSL);
-		String template = FileUtils.readFileAsString(".\\src\\util\\xhtml\\template.xsl");
+		File templateFile = new File(new File(new File("src", "util"), "xhtml"), "template.xsl");
+		String template = FileUtils.readFileAsString(templateFile);
 		XSL = template.replace("###GAME_SPECIFIC_STUFF_HERE###", CustomXSL);
 		XSL = XSL.replace("###STATE_NUM_HERE###", turnToShow.toString());
 		return XSL;
@@ -128,7 +152,7 @@ public class GameStateRenderPanel extends JPanel {
 	{
 		String XHTML = getXHTMLfromGameXML(gameXML, turnToShow);
 	    try {
-			panel.setDocumentFromString(XHTML, "http://visionary.stanford.edu:4444", new XhtmlNamespaceHandler());			
+			panel.setDocumentFromString(XHTML, baseURL, new XhtmlNamespaceHandler());			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -137,7 +161,7 @@ public class GameStateRenderPanel extends JPanel {
 	private static void setPanelToDisplayGameXHTML(XHTMLPanel panel, String XHTML)
 	{
 		try {
-			panel.setDocumentFromString(XHTML, "http://visionary.stanford.edu:4444", getHandler());			
+			panel.setDocumentFromString(XHTML, baseURL, getHandler());			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -151,39 +175,82 @@ public class GameStateRenderPanel extends JPanel {
 		return the_handler;
 	}
 
-//For the moment no custom User Agent Callback is used, but it could be added to by default not hit visionary for graphics
-/*
-	private UserAgentCallback uac;
-    private UserAgentCallback getUAC() {
-        return uac;
+	//Sharing UACs would probably help reduce resource usage, but I'm not sure about thread-safety of UAC (it seemed not to be)
+	private static UserAgentCallback uac = null;
+    private static UserAgentCallback getUAC() {
+    	return getNewUAC();
     }
-    private void setupUserAgentCallback(XHTMLPanel panel) {
-        uac = new NaiveUserAgent() {
+    private static UserAgentCallback getNewUAC() {
+        return new NaiveUserAgent() {
             //TOdO:implement this with nio.
-            protected InputStream resolveAndOpenStream(String uri) {
-                java.io.InputStream is = null;
+            @Override
+			public ImageResource getImageResource(String uri)
+            {
+            	ImageResource ir;
                 uri = resolveURI(uri);
-                try {
-                    final URLConnection uc = new URL(uri).openConnection();
-                    
-                    uc.setConnectTimeout(10 * 1000);
-                    uc.setReadTimeout(30 * 1000);
-                    
-                    uc.connect();
-                    is = uc.getInputStream();
-                } catch (java.net.MalformedURLException e) {
-                    XRLog.exception("bad URL given: " + uri, e);
-                } catch (java.io.FileNotFoundException e) {
-                    XRLog.exception("item at URI " + uri + " not found");
-                } catch (java.io.IOException e) {
-                    XRLog.exception("IO problem for " + uri, e);
+                ir = (ImageResource) _imageCache.get(uri);
+                //TODO: check that cached image is still valid
+                if (ir == null) {
+                	InputStream is = null;
+                	
+                	String[] chunks = uri.split("/");
+                	String filename = chunks[chunks.length-1];
+                	File localImg = new File("games", "images");
+                	for(int i=chunks.length-1; i>0; i--)
+                		if(chunks[i].equals("images"))
+                		{
+                			for(int j=i+1; j<chunks.length-1; j++)
+                				localImg = new File(localImg, chunks[j]);                				
+                			break;
+                		}
+                	localImg.mkdirs();
+                	localImg = new File(localImg, filename);
+                	
+                	boolean presentLocally = localImg.exists();
+                	if(presentLocally)
+                	{
+                		try {
+                			is = new FileInputStream(localImg);
+                		} catch(Exception ex) { ex.printStackTrace(); }
+                	}
+                	else
+                	{
+                	    is = resolveAndOpenStream(uri);
+                	}
+                	
+                    if (is != null) {
+                        try {
+                            BufferedImage img = ImageIO.read(is);
+                            if(!presentLocally)
+                            {
+                            	ImageIO.write(img, "png", localImg);                       	
+                            }
+                            if (img == null) {
+                                throw new IOException("ImageIO.read() returned null");
+                            }
+                            ir = createImageResource(uri, img);
+                            _imageCache.put(uri, ir);
+                        } catch (FileNotFoundException e) {
+                            XRLog.exception("Can't read image file; image at URI '" + uri + "' not found");
+                        } catch (IOException e) {
+                            XRLog.exception("Can't read image file; unexpected problem for URI '" + uri + "'", e);
+                        } finally {
+                            try {
+                                is.close();
+                            } catch (IOException e) {
+                                // ignore
+                            }
+                        }
+                    }
                 }
-                return is;
+                if (ir == null) {
+                    ir = createImageResource(uri, null);
+                }
+                return ir;
             }
         };
-        panel.getSharedContext().setUserAgentCallback(uac);
     }
-*/
+
 	
 //=======Test App code=========
 	private static void createAndShowGUI(GameStateRenderPanel renderPanel)
@@ -211,11 +278,14 @@ public class GameStateRenderPanel extends JPanel {
 		});
 	}
 	
-	String gameXML = FileUtils.readFileAsString(".\\src\\util\\xhtml\\sampleMatch.xml");
+	File gameXMLFile = new File(new File(new File("src", "util"), "xhtml"), "sampleMath.xml");
+	String gameXML = FileUtils.readFileAsString(gameXMLFile);
+
 	int curTurn = 1;
 	XHTMLPanel mypanel;
 	private final JButton forward;
 	private final JButton back;
+	@SuppressWarnings("serial")
 	public GameStateRenderPanel()
 	{
 		super(new GridBagLayout());

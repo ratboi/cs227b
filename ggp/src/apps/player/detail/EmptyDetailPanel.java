@@ -3,12 +3,12 @@ package apps.player.detail;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.LayoutManager;
 
 import javax.swing.JLabel;
 
 import util.observer.Event;
 
+@SuppressWarnings("serial")
 public class EmptyDetailPanel extends DetailPanel {
 
 	public EmptyDetailPanel() {

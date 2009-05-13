@@ -3,8 +3,6 @@ package player.gamer.statemachine.reflex.random;
 import java.util.List;
 import java.util.Random;
 
-import apps.player.detail.DetailPanel;
-
 import player.gamer.statemachine.StateMachineGamer;
 import player.gamer.statemachine.reflex.event.ReflexMoveSelectionEvent;
 import player.gamer.statemachine.reflex.gui.ReflexDetailPanel;
@@ -14,6 +12,7 @@ import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
 import util.statemachine.prover.cache.CachedProverStateMachine;
+import apps.player.detail.DetailPanel;
 
 public final class RandomGamer extends StateMachineGamer
 {

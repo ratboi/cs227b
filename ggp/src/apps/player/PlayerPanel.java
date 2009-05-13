@@ -16,18 +16,13 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.UIManager;
 import javax.swing.border.TitledBorder;
 
 import player.GamePlayer;
 import player.gamer.Gamer;
-import player.gamer.statemachine.human.HumanGamer;
-import player.gamer.statemachine.human.gui.HumanDetailPanel;
-import player.gamer.statemachine.reflex.gui.ReflexDetailPanel;
-import player.gamer.statemachine.reflex.legal.LegalGamer;
-import player.gamer.statemachine.reflex.random.RandomGamer;
 import util.reflection.ProjectSearcher;
 import apps.player.config.ConfigPanel;
-import apps.player.config.EmptyConfigPanel;
 import apps.player.detail.DetailPanel;
 import apps.player.match.MatchPanel;
 import apps.player.network.NetworkPanel;
@@ -50,6 +45,13 @@ public final class PlayerPanel extends JPanel
 
 	public static void main(String[] args) throws IOException
 	{
+		try {
+			  UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch(Exception e) {
+			 System.err.println("Unable to set native look and feel."); 
+			 e.printStackTrace();
+		}
+
 		final PlayerPanel playerPanel = new PlayerPanel();
 		javax.swing.SwingUtilities.invokeLater(new Runnable()
 		{

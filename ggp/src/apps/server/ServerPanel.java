@@ -18,6 +18,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.UIManager;
 import javax.swing.border.TitledBorder;
 
 import server.GameServer;
@@ -42,7 +43,7 @@ public final class ServerPanel extends JPanel
 		JFrame frame = new JFrame("Game Server");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		frame.setPreferredSize(new Dimension(1024, 850));
+		frame.setPreferredSize(new Dimension(1200, 900));
 		frame.getContentPane().add(serverPanel);
 
 		frame.pack();
@@ -51,6 +52,13 @@ public final class ServerPanel extends JPanel
 
 	public static void main(String[] args)
 	{
+		try {
+			  UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch(Exception e) {
+			 System.err.println("Unable to set native look and feel."); 
+			 e.printStackTrace();
+		}
+		
 		final ServerPanel serverPanel = new ServerPanel();
 		javax.swing.SwingUtilities.invokeLater(new Runnable()
 		{
@@ -70,6 +78,7 @@ public final class ServerPanel extends JPanel
 	private final JTextField playClockTextField;
 
 	private final List<JTextField> portTextFields;
+	private final List<JTextField> playerNameTextFields;
 	private final List<JLabel> roleLabels;
 	private final JButton runButton;
 	private final JButton sourceButton;
@@ -86,14 +95,15 @@ public final class ServerPanel extends JPanel
 		sourceButton = new JButton(sourceButtonMethod(this));
 		sourceTextField = new JTextField("Click to select a .kif file");
 		matchIdTextField = new JTextField("Match.default");
-		startClockTextField = new JTextField("240");
-		playClockTextField = new JTextField("20");
+		startClockTextField = new JTextField("10");
+		playClockTextField = new JTextField("30");
 		managerPanel = new JPanel(new GridBagLayout());
 		matchesTabbedPane = new JTabbedPane();
 
 		roleLabels = new ArrayList<JLabel>();
 		hostTextFields = new ArrayList<JTextField>();
 		portTextFields = new ArrayList<JTextField>();
+		playerNameTextFields = new ArrayList<JTextField>();
 		description = null;
 
 		runButton.setEnabled(false);
@@ -104,7 +114,7 @@ public final class ServerPanel extends JPanel
 
 		managerPanel.setBorder(new TitledBorder("Manager"));
 		managerPanel.add(sourceButton, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
-		managerPanel.add(sourceTextField, new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 5, 5));
+		managerPanel.add(sourceTextField, new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 5, 5));
 		managerPanel.add(new JLabel("Match Id:"), new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 5, 5));
 		managerPanel.add(matchIdTextField, new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 5, 5));
 		managerPanel.add(new JLabel("Start Clock:"), new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 5, 5));
@@ -146,6 +156,11 @@ public final class ServerPanel extends JPanel
 					{
 						ports.add(Integer.valueOf(textField.getText()));
 					}
+					List<String> playerNames = new ArrayList<String>(serverPanel.playerNameTextFields.size());
+					for (JTextField textField : serverPanel.playerNameTextFields)
+					{
+						playerNames.add(textField.getText());
+					}
 
 					HistoryPanel historyPanel = new HistoryPanel();
 					ErrorPanel errorPanel = new ErrorPanel();
@@ -165,7 +180,7 @@ public final class ServerPanel extends JPanel
 						tempDefaultPort++;
 					}
 					
-					GameServer gameServer = new GameServer(match, hosts, ports);
+					GameServer gameServer = new GameServer(match, hosts, ports, playerNames);
 					gameServer.addObserver(errorPanel);
 					gameServer.addObserver(historyPanel);
 					gameServer.addObserver(visualizationPanel);
@@ -204,11 +219,13 @@ public final class ServerPanel extends JPanel
 								serverPanel.managerPanel.remove(roleLabels.get(i));
 								serverPanel.managerPanel.remove(hostTextFields.get(i));
 								serverPanel.managerPanel.remove(portTextFields.get(i));
+								serverPanel.managerPanel.remove(playerNameTextFields.get(i));
 							}
 
 							roleLabels.clear();
 							hostTextFields.clear();
 							portTextFields.clear();
+							playerNameTextFields.clear();
 
 							serverPanel.validate();
 
@@ -223,16 +240,19 @@ public final class ServerPanel extends JPanel
 								roleLabels.add(new JLabel(roles.get(i).getName().toString() + ":"));
 								hostTextFields.add(new JTextField("localhost"));
 								portTextFields.add(new JTextField(tempDefaultPort.toString()));
+								playerNameTextFields.add(new JTextField("defaultPlayerName"));
 								tempDefaultPort++;
 
 								hostTextFields.get(i).setColumns(15);
 								portTextFields.get(i).setColumns(15);
+								playerNameTextFields.get(i).setColumns(15);
 
-								serverPanel.managerPanel.add(roleLabels.get(i), new GridBagConstraints(0, 4 + 2 * i, 1, 1, 1.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 5, 5));
-								serverPanel.managerPanel.add(hostTextFields.get(i), new GridBagConstraints(1, 4 + 2 * i, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 5, 5));
-								serverPanel.managerPanel.add(portTextFields.get(i), new GridBagConstraints(1, 5 + 2 * i, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 5, 5));
+								serverPanel.managerPanel.add(roleLabels.get(i), new GridBagConstraints(0, 4 + 3 * i, 1, 1, 1.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 5, 5));
+								serverPanel.managerPanel.add(hostTextFields.get(i), new GridBagConstraints(1, 4 + 3 * i, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 5, 5));
+								serverPanel.managerPanel.add(portTextFields.get(i), new GridBagConstraints(1, 5 + 3 * i, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 5, 5));
+								serverPanel.managerPanel.add(playerNameTextFields.get(i),  new GridBagConstraints(1, 6 + 3 * i, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 5, 5));
 							}
-							serverPanel.managerPanel.add(runButton, new GridBagConstraints(1, 4 + 2 * roles.size(), 1, 1, 0.0, 1.0, GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0));
+							serverPanel.managerPanel.add(runButton, new GridBagConstraints(1, 4 + 3 * roles.size(), 1, 1, 0.0, 1.0, GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5), 0, 0));
 
 							serverPanel.validate();
 

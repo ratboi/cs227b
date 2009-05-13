@@ -22,14 +22,16 @@ public final class StartRequestThread extends Thread
 	private final Match match;
 	private final int port;
 	private final Role role;
+	private final String playerName;
 
-	public StartRequestThread(GameServer gameServer, Match match, Role role, String host, int port)
+	public StartRequestThread(GameServer gameServer, Match match, Role role, String host, int port, String playerName)
 	{
 		this.gameServer = gameServer;
 		this.match = match;
 		this.role = role;
 		this.host = host;
 		this.port = port;
+		this.playerName = playerName;
 	}
 
 	@Override
@@ -40,7 +42,7 @@ public final class StartRequestThread extends Thread
 			Socket socket = new Socket(host, port);
 			String request = RequestBuilder.getStartRequest(match.getMatchId(), role, match.getDescription(), match.getStartClock(), match.getPlayClock());
 
-			HttpWriter.writeAsClient(socket, request);
+			HttpWriter.writeAsClient(socket, request, playerName);
 			HttpReader.readAsClient(socket, match.getStartClock() * 1000);
 
 			socket.close();

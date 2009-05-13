@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Stack;
-import java.util.regex.Pattern;
 
 import player.gamer.Gamer;
 
@@ -55,9 +54,7 @@ public class ProjectSearcher {
 	    };
 		
 		List<String> rval = new ArrayList<String>();
-		String CP = System.getProperty(("java.class.path"));
-		CP = CP.split(System.getProperty("path.separator"))[0];
-		File f = new File(CP);
+		File f = new File("bin");
 		Stack<File> toProcess = new Stack<File>();
 		toProcess.add(f);
 		while(!toProcess.empty())
@@ -71,7 +68,7 @@ public class ProjectSearcher {
 			{
 				if(f.getName().endsWith(".class"))
 				{					
-					String fullyQualifiedName = f.getAbsolutePath().replace(CP, "");
+					String fullyQualifiedName = f.getPath().replaceAll("^bin", "");
 					fullyQualifiedName = fullyQualifiedName.replaceAll("\\.class$","");
 					fullyQualifiedName = fullyQualifiedName.replaceAll("^[\\\\/]", "");
 					fullyQualifiedName = fullyQualifiedName.replaceAll("[\\\\/]", ".");
