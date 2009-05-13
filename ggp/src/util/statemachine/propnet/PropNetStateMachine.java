@@ -1,11 +1,14 @@
 package util.statemachine.propnet;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import util.gdl.grammar.Gdl;
 import util.gdl.grammar.GdlProposition;
+import util.gdl.grammar.GdlRelation;
 import util.gdl.grammar.GdlSentence;
 import util.propnet.architecture.PropNet;
+import util.propnet.architecture.component.proposition.Proposition;
 import util.propnet.factory.PropNetFactory;
 import util.statemachine.MachineState;
 import util.statemachine.Move;
@@ -14,6 +17,7 @@ import util.statemachine.StateMachine;
 import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
+import util.statemachine.prover.ProverRole;
 
 
 /**
@@ -23,6 +27,9 @@ import util.statemachine.exceptions.TransitionDefinitionException;
 public final class PropNetStateMachine extends StateMachine
 {
 	private PropNet propnet = null;
+	private MachineState initialState;
+	private List<Role> roles;
+	
 	/**
 	 * Your JavaDoc here.
 	 * 
@@ -36,6 +43,53 @@ public final class PropNetStateMachine extends StateMachine
 	public void intialize(List<Gdl> description) {
 		PropNetFactory factory = new PropNetFactory();
 		propnet = factory.create(description);
+		roles = computeRoles(description);
+		//initialState = computeInitialState();
+		
+		for (Proposition prop : propnet.getPropositions()) {
+			GdlSentence sentence = prop.getName().toSentence();
+			System.out.println(sentence.getName());
+			System.out.println(sentence.getBody().toString());
+			System.out.println("--------------");
+		}
+		
+		/*
+		for (String name : propnet.getLegalPropositions().keySet()) {
+			System.out.println(name);
+			for (Proposition prop : propnet.getLegalPropositions().get(name)) {
+				System.out.println(prop.getName().toString());
+			}
+			System.out.println("--------------");
+		}
+		*/
+		/*
+		for (String name : propnet.getGoalPropositions().keySet()) {
+			roles.add(new PropNetRole(name));
+		}
+		*/
+	}
+
+	// mostly copied from ProverStateMachine
+	private List<Role> computeRoles(List<Gdl> description)
+	{
+		List<Role> roles = new ArrayList<Role>();
+		for (Gdl gdl : description)
+		{
+			if (gdl instanceof GdlRelation)
+			{
+				GdlRelation relation = (GdlRelation) gdl;
+				if (relation.getName().getValue().equals("role"))
+				{
+					roles.add(new PropNetRole((GdlProposition) relation.get(0).toSentence()));
+				}
+			}
+		}
+
+		return roles;
+	}
+	
+	private void update() {
+		// TODO
 	}
 
 	@Override
@@ -64,8 +118,7 @@ public final class PropNetStateMachine extends StateMachine
 
 	@Override
 	public Move getMoveFromSentence(GdlSentence sentence) {
-		// TODO Auto-generated method stub
-		return null;
+		return new PropNetMove(sentence);
 	}
 
 	@Override
@@ -76,14 +129,12 @@ public final class PropNetStateMachine extends StateMachine
 
 	@Override
 	public Role getRoleFromProp(GdlProposition proposition) {
-		// TODO Auto-generated method stub
-		return null;
+		return new PropNetRole(proposition);
 	}
 
 	@Override
 	public List<Role> getRoles() {
-		// TODO Auto-generated method stub
-		return null;
+		return roles;
 	}	
 
 	@Override
