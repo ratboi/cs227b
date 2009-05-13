@@ -127,7 +127,7 @@ public final class PropNetStateMachine extends StateMachine
 		}
 	}
 	
-	private void update(boolean clearOld) {
+	private synchronized void update(boolean clearOld) {
 		List<Component> transitions = new ArrayList<Component>();
 		// grab all propositions that are true
 		for (Component comp : propnet.getComponents()) {
@@ -148,7 +148,7 @@ public final class PropNetStateMachine extends StateMachine
 	}
 
 	@Override
-	public int getGoal(MachineState state, Role role) throws GoalDefinitionException {
+	public synchronized int getGoal(MachineState state, Role role) throws GoalDefinitionException {
 		setState(state);
 		update(false);
 		String roleName = role.getName().toString();
@@ -162,12 +162,14 @@ public final class PropNetStateMachine extends StateMachine
 			}
 		}
 		if (numTrueGoalProps != 1) {
+			System.out.println("there are " + numTrueGoalProps + " true goal props instead of just 1");
 			throw new GoalDefinitionException(state, role);
 		}
+		GdlTerm value = goalProp.getName().toSentence().get(1);
 		try {
-			GdlTerm value = goalProp.getName().toSentence().get(1);
 			return Integer.parseInt(value.toString());
 		} catch (Exception e) {
+			System.out.println(value.toString() + " couldn't be parsed as an integer");
 			throw new GoalDefinitionException(state, role);
 		}
 	}
@@ -178,7 +180,7 @@ public final class PropNetStateMachine extends StateMachine
 	}
 
 	@Override
-	public List<Move> getLegalMoves(MachineState state, Role role) throws MoveDefinitionException {
+	public synchronized List<Move> getLegalMoves(MachineState state, Role role) throws MoveDefinitionException {
 		List<Move> moves = new ArrayList<Move>();
 		setState(state);
 		update(false);
@@ -202,7 +204,7 @@ public final class PropNetStateMachine extends StateMachine
 	}
 
 	@Override
-	public MachineState getNextState(MachineState state, List<Move> moves) throws TransitionDefinitionException {
+	public synchronized MachineState getNextState(MachineState state, List<Move> moves) throws TransitionDefinitionException {
 		setState(state);
 		setMoves(moves);
 		update(true);
