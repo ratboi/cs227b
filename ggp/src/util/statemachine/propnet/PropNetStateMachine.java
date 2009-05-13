@@ -48,8 +48,21 @@ public final class PropNetStateMachine extends StateMachine
 		PropNetFactory factory = new PropNetFactory();
 		propnet = factory.create(description);
 		roles = computeRoles(description);
+		System.out.println("printing roles");
+		for (Role role : roles)
+			System.out.println(role.getName().toString());
+		System.out.println("done printing roles");
 		initialState = computeInitialState();
 		System.out.println(initialState);
+		System.out.println("--------------");
+		for (Role role : roles) {
+			String name = role.getName().toString();
+			List<Proposition> goalProps = propnet.getGoalPropositions().get(name);
+			for (Proposition prop : goalProps) {
+				System.out.println(prop.getName().toSentence().toString());
+				System.out.println(prop.getName().toSentence().get(1));
+			}
+		}
 	}
 
 	// mostly copied from ProverStateMachine
@@ -113,8 +126,27 @@ public final class PropNetStateMachine extends StateMachine
 
 	@Override
 	public int getGoal(MachineState state, Role role) throws GoalDefinitionException {
-		// TODO Auto-generated method stub
-		return 0;
+		setState(state);
+		update();
+		String roleName = role.getName().toString();
+		List<Proposition> goalProps = propnet.getGoalPropositions().get(roleName);
+		Proposition goalProp = null;
+		int numTrueGoalProps = 0;
+		for (Proposition prop : goalProps) {
+			if (prop.getValue()) {
+				goalProp = prop;
+				numTrueGoalProps++;
+			}
+		}
+		if (numTrueGoalProps != 1) {
+			throw new GoalDefinitionException(state, role);
+		}
+		try {
+			GdlTerm value = goalProp.getName().toSentence().get(1);
+			return Integer.parseInt(value.toString());
+		} catch (Exception e) {
+			throw new GoalDefinitionException(state, role);
+		}
 	}
 
 	@Override
