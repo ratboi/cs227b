@@ -36,7 +36,7 @@ public final class PlayerPanel extends JPanel
 		JFrame frame = new JFrame("Game Player");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		frame.setPreferredSize(new Dimension(1024, 768));
+		frame.setPreferredSize(new Dimension(1024, 400));
 		frame.getContentPane().add(playerPanel);
 
 		frame.pack();
