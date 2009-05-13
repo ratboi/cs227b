@@ -93,7 +93,7 @@ public final class PropNetStateMachine extends StateMachine
 		return roles;
 	}
 	
-	private MachineState computeInitialState() {
+	private synchronized MachineState computeInitialState() {
 		clearValues();
 		propnet.getInitProposition().setValue(true);
 		update(false);
@@ -106,19 +106,20 @@ public final class PropNetStateMachine extends StateMachine
 		return new PropNetMachineState(stateTerms);
 	}
 	
-	private void clearValues() {
+	private synchronized void clearValues() {
 		for (Proposition prop : propnet.getPropositions()) {
 			prop.setValue(false);
 		}
 	}
 	
-	private void updateOne(Component currComp, List<Component> transitions) {
-		if (!currComp.getValue()) {
+	private synchronized void updateOne(Component currComp, List<Component> transitions) {
+		if (!currComp.getValue() || currComp.equals(propnet.getTerminalProposition())) {
 			return;
 		}
 		for (Component comp : currComp.getOutputs()) {
 			if (comp instanceof Proposition) {
 				Proposition prop = (Proposition) comp;
+				//System.out.println("Truing this prop" + prop);
 				prop.setValue(true);
 			}
 			if (comp instanceof Transition) {
@@ -163,14 +164,17 @@ public final class PropNetStateMachine extends StateMachine
 		Proposition goalProp = null;
 		int numTrueGoalProps = 0;
 		for (Proposition prop : goalProps) {
+			System.out.println(prop.getName().toString());
 			if (prop.getValue()) {
+				System.out.println("the above proposition is true!");
 				goalProp = prop;
 				numTrueGoalProps++;
 			}
+			System.out.println("-------");
 		}
 		if (numTrueGoalProps != 1) {
 			System.out.println("there are " + numTrueGoalProps + " true goal props instead of just 1");
-			throw new GoalDefinitionException(state, role);
+			//throw new GoalDefinitionException(state, role);
 		}
 		GdlTerm value = goalProp.getName().toSentence().get(1);
 		try {
@@ -234,14 +238,14 @@ public final class PropNetStateMachine extends StateMachine
 		return roles;
 	}
 	
-	private void setMoves(List<Move> moves) {
+	private synchronized void setMoves(List<Move> moves) {
 		for (int i = 0; i < moves.size(); i++) {
 			GdlTerm doesState = GdlPool.getRelation(GdlPool.getConstant("does"), new GdlTerm[] { roles.get(i).getName().toTerm(), moves.get(i).getContents().toTerm() }).toTerm();
 			propnet.getInputPropositions().get(doesState).setValue(true);
 		}
 	}
 	
-	private void setState(MachineState state) {
+	private synchronized void setState(MachineState state) {
 		clearValues();
 		List<GdlSentence> contents = state.getContents();
 		Map<GdlTerm, Proposition> baseProps = propnet.getBasePropositions();
@@ -252,7 +256,7 @@ public final class PropNetStateMachine extends StateMachine
 	}
 
 	@Override
-	public boolean isTerminal(MachineState state) {
+	public synchronized boolean isTerminal(MachineState state) {
 		setState(state);
 		update(false);
 		return propnet.getTerminalProposition().getValue();
