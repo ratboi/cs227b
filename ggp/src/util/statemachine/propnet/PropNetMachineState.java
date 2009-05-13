@@ -9,18 +9,10 @@ import util.statemachine.MachineState;
 
 public final class PropNetMachineState implements MachineState {
 	
-	private final List<Proposition> propositions;
-
-	/**
-	 * Constructs a PropNetMachineState given a list of propositions
-	 * that are true in the machine state.  All other propositions are
-	 * assumed to be false.
-	 * 
-	 * @param propositions the list of propositions that are true
-	 */
-	public PropNetMachineState(List<Proposition> propositions)
-	{
-		this.propositions = propositions;
+	private final List<GdlSentence> contents;
+	
+	public PropNetMachineState(List<GdlSentence> contents) {
+		this.contents = contents;
 	}
 
 	@Override
@@ -29,27 +21,14 @@ public final class PropNetMachineState implements MachineState {
 		if ((o != null) && (o instanceof PropNetMachineState))
 		{
 			PropNetMachineState state = (PropNetMachineState) o;
-			return state.propositions.equals(propositions);
+			return state.contents.equals(contents);
 		}
 
 		return false;
 	}
 
 	public List<GdlSentence> getContents() {
-		List<GdlSentence> contents = new ArrayList<GdlSentence>();
-		for (Proposition proposition : propositions) {
-			contents.add(proposition.getName().toSentence());
-		}
 		return contents;
-	}
-	
-	/**
-	 * Get the list of propositions that are true in the state.
-	 * 
-	 * @return the list of true propositions
-	 */
-	public List<Proposition> getPropositions() {
-		return propositions;
 	}
 
 }

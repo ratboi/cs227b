@@ -44,29 +44,6 @@ public final class PropNetStateMachine extends StateMachine
 		PropNetFactory factory = new PropNetFactory();
 		propnet = factory.create(description);
 		roles = computeRoles(description);
-		//initialState = computeInitialState();
-		
-		for (Proposition prop : propnet.getPropositions()) {
-			GdlSentence sentence = prop.getName().toSentence();
-			System.out.println(sentence.getName());
-			System.out.println(sentence.getBody().toString());
-			System.out.println("--------------");
-		}
-		
-		/*
-		for (String name : propnet.getLegalPropositions().keySet()) {
-			System.out.println(name);
-			for (Proposition prop : propnet.getLegalPropositions().get(name)) {
-				System.out.println(prop.getName().toString());
-			}
-			System.out.println("--------------");
-		}
-		*/
-		/*
-		for (String name : propnet.getGoalPropositions().keySet()) {
-			roles.add(new PropNetRole(name));
-		}
-		*/
 	}
 
 	// mostly copied from ProverStateMachine
@@ -112,8 +89,7 @@ public final class PropNetStateMachine extends StateMachine
 
 	@Override
 	public MachineState getMachineStateFromSentenceList(List<GdlSentence> sentenceList) {
-		// TODO Auto-generated method stub
-		return null;
+		return new PropNetMachineState(sentenceList);
 	}
 
 	@Override
