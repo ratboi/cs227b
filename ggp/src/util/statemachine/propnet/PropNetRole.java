@@ -26,5 +26,17 @@ public class PropNetRole implements Role {
 	public GdlProposition getName() {
 		return name;
 	}
+
+	@Override
+	public int hashCode()
+	{
+		return name.hashCode();
+	}
+
+	@Override
+	public String toString()
+	{
+		return name.toString();
+	}
 	
 }
