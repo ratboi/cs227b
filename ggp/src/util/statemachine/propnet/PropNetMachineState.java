@@ -30,5 +30,17 @@ public final class PropNetMachineState implements MachineState {
 	public List<GdlSentence> getContents() {
 		return contents;
 	}
+	
+	@Override
+	public int hashCode()
+	{
+		return contents.hashCode();
+	}
+
+	@Override
+	public String toString()
+	{
+		return contents.toString();
+	}
 
 }

@@ -2,13 +2,17 @@ package util.statemachine.propnet;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import util.gdl.grammar.Gdl;
 import util.gdl.grammar.GdlProposition;
 import util.gdl.grammar.GdlRelation;
 import util.gdl.grammar.GdlSentence;
+import util.gdl.grammar.GdlTerm;
 import util.propnet.architecture.PropNet;
+import util.propnet.architecture.component.transition.Transition;
 import util.propnet.architecture.component.proposition.Proposition;
+import util.propnet.architecture.component.Component;
 import util.propnet.factory.PropNetFactory;
 import util.statemachine.MachineState;
 import util.statemachine.Move;
@@ -44,6 +48,8 @@ public final class PropNetStateMachine extends StateMachine
 		PropNetFactory factory = new PropNetFactory();
 		propnet = factory.create(description);
 		roles = computeRoles(description);
+		initialState = computeInitialState();
+		System.out.println(initialState);
 	}
 
 	// mostly copied from ProverStateMachine
@@ -65,8 +71,44 @@ public final class PropNetStateMachine extends StateMachine
 		return roles;
 	}
 	
+	private MachineState computeInitialState() {
+		clearValues();
+		propnet.getInitProposition().setValue(true);
+		update();
+		List<GdlSentence> stateTerms = new ArrayList<GdlSentence>();
+		for (GdlTerm key : propnet.getBasePropositions().keySet()) {
+			if (propnet.getBasePropositions().get(key).getValue()) {
+				stateTerms.add(key.toSentence());
+			}
+		}
+		return new PropNetMachineState(stateTerms);
+	}
+	
+	private void clearValues() {
+		for (Proposition prop : propnet.getPropositions()) {
+			prop.setValue(false);
+		}
+	}
+	
+	private void updateOne(Component currComp) {
+		for (Component comp : currComp.getOutputs()) {
+			if (comp instanceof Proposition) {
+				Proposition prop = (Proposition) comp;
+				prop.setValue(true);
+			}
+			if (!(currComp instanceof Transition) && comp.getValue()) {
+				updateOne(comp);
+			}
+		}
+	}
+	
 	private void update() {
-		// TODO
+		// grab all propositions that are true
+		for (Component comp : propnet.getComponents()) {
+			if (comp.getValue()) {
+				updateOne(comp);
+			}
+		}
 	}
 
 	@Override
@@ -77,8 +119,7 @@ public final class PropNetStateMachine extends StateMachine
 
 	@Override
 	public MachineState getInitialState() {
-		// TODO Auto-generated method stub
-		return null;
+		return initialState;
 	}
 
 	@Override
