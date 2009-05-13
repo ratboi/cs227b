@@ -43,7 +43,7 @@ public final class ServerPanel extends JPanel
 		JFrame frame = new JFrame("Game Server");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		frame.setPreferredSize(new Dimension(1200, 400));
+		frame.setPreferredSize(new Dimension(1200, 500));
 		frame.getContentPane().add(serverPanel);
 
 		frame.pack();
