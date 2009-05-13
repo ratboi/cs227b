@@ -152,12 +152,23 @@ public final class PropNetStateMachine extends StateMachine
 	@Override
 	public List<Role> getRoles() {
 		return roles;
-	}	
+	}
+	
+	private void setState(MachineState state) {
+		clearValues();
+		List<GdlSentence> contents = state.getContents();
+		Map<GdlTerm, Proposition> baseProps = propnet.getBasePropositions();
+		for (GdlSentence sentence : contents) {
+			Proposition prop = baseProps.get(sentence.toTerm());
+			prop.setValue(true);
+		}
+	}
 
 	@Override
 	public boolean isTerminal(MachineState state) {
-		// TODO Auto-generated method stub
-		return false;
+		setState(state);
+		update();
+		return propnet.getTerminalProposition().getValue();
 	}
 
 
