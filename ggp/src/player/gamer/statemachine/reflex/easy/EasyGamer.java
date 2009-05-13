@@ -29,6 +29,7 @@ public class EasyGamer extends StateMachineGamer {
 	{
 		long start = System.currentTimeMillis();
 		List<Move> legalMoves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
+		System.out.println(legalMoves);
 		Move selection = getMinimaxMove(getStateMachine(), getCurrentState(), getRole());
 		long stop = System.currentTimeMillis();
 

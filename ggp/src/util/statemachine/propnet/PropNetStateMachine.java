@@ -96,7 +96,7 @@ public final class PropNetStateMachine extends StateMachine
 	private MachineState computeInitialState() {
 		clearValues();
 		propnet.getInitProposition().setValue(true);
-		update();
+		update(false);
 		List<GdlSentence> stateTerms = new ArrayList<GdlSentence>();
 		for (GdlTerm key : propnet.getBasePropositions().keySet()) {
 			if (propnet.getBasePropositions().get(key).getValue()) {
@@ -112,23 +112,37 @@ public final class PropNetStateMachine extends StateMachine
 		}
 	}
 	
-	private void updateOne(Component currComp) {
+	private void updateOne(Component currComp, List<Component> transitions) {
 		for (Component comp : currComp.getOutputs()) {
 			if (comp instanceof Proposition) {
 				Proposition prop = (Proposition) comp;
 				prop.setValue(true);
 			}
-			if (!(currComp instanceof Transition) && comp.getValue()) {
-				updateOne(comp);
+			if (comp instanceof Transition) {
+				transitions.add(comp);
+			}
+			if (!(comp instanceof Transition) && comp.getValue()) {
+				updateOne(comp, transitions);
 			}
 		}
 	}
 	
-	private void update() {
+	private void update(boolean clearOld) {
+		List<Component> transitions = new ArrayList<Component>();
 		// grab all propositions that are true
 		for (Component comp : propnet.getComponents()) {
 			if (comp.getValue()) {
-				updateOne(comp);
+				updateOne(comp, transitions);
+			}
+		}
+		if (clearOld) {
+			clearValues();
+			for (Component transition : transitions) {
+				for (Component comp : transition.getOutputs()) {
+					if (comp instanceof Proposition) {
+						((Proposition)comp).setValue(true);
+					}
+				}
 			}
 		}
 	}
@@ -136,7 +150,7 @@ public final class PropNetStateMachine extends StateMachine
 	@Override
 	public int getGoal(MachineState state, Role role) throws GoalDefinitionException {
 		setState(state);
-		update();
+		update(false);
 		String roleName = role.getName().toString();
 		List<Proposition> goalProps = propnet.getGoalPropositions().get(roleName);
 		Proposition goalProp = null;
@@ -167,7 +181,7 @@ public final class PropNetStateMachine extends StateMachine
 	public List<Move> getLegalMoves(MachineState state, Role role) throws MoveDefinitionException {
 		List<Move> moves = new ArrayList<Move>();
 		setState(state);
-		update();
+		update(false);
 		String roleName = role.getName().toString();
 		for (Proposition prop : propnet.getLegalPropositions().get(roleName)) {
 			if (prop.getValue()) {
@@ -189,10 +203,9 @@ public final class PropNetStateMachine extends StateMachine
 
 	@Override
 	public MachineState getNextState(MachineState state, List<Move> moves) throws TransitionDefinitionException {
-		// TODO Auto-generated method stub
 		setState(state);
 		setMoves(moves);
-		update();
+		update(true);
 		List<GdlSentence> stateTerms = new ArrayList<GdlSentence>();
 		for (GdlTerm key : propnet.getBasePropositions().keySet()) {
 			if (propnet.getBasePropositions().get(key).getValue()) {
@@ -232,7 +245,7 @@ public final class PropNetStateMachine extends StateMachine
 	@Override
 	public boolean isTerminal(MachineState state) {
 		setState(state);
-		update();
+		update(false);
 		return propnet.getTerminalProposition().getValue();
 	}
 
