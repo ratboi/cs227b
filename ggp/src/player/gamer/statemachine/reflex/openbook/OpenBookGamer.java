@@ -22,12 +22,11 @@ import util.statemachine.Role;
 import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
-import util.statemachine.prover.cache.CachedProverStateMachine;
 import util.statemachine.propnet.PropNetStateMachine;
 
 public class OpenBookGamer extends StateMachineGamer {
 
-	public final int MAX_LEVEL = 2;
+	public final int MAX_LEVEL = 1;
 	public final int NODES_TO_TERMINAL = 2;
 	public static final int BUFFER_TIME = 1000;
 	private Heuristic heuristic;
