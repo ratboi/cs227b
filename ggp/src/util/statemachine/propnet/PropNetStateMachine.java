@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import util.gdl.grammar.Gdl;
+import util.gdl.grammar.GdlPool;
 import util.gdl.grammar.GdlProposition;
 import util.gdl.grammar.GdlRelation;
 import util.gdl.grammar.GdlSentence;
@@ -49,7 +50,12 @@ public final class PropNetStateMachine extends StateMachine
 		propnet = factory.create(description);
 		roles = computeRoles(description);
 		initialState = computeInitialState();
-		System.out.println(initialState);
+		// System.out.println(initialState);
+		/*try {
+			System.out.println(getLegalMoves(initialState, roles.get(0)));
+		} catch (Exception e) {
+			
+		}*/
 	}
 
 	// mostly copied from ProverStateMachine
@@ -124,8 +130,16 @@ public final class PropNetStateMachine extends StateMachine
 
 	@Override
 	public List<Move> getLegalMoves(MachineState state, Role role) throws MoveDefinitionException {
-		// TODO Auto-generated method stub
-		return null;
+		List<Move> moves = new ArrayList<Move>();
+		setState(state);
+		update();
+		String roleName = role.getName().toString();
+		for (Proposition prop : propnet.getLegalPropositions().get(roleName)) {
+			if (prop.getValue()) {
+				moves.add(new PropNetMove(prop.getName().toSentence().get(1).toSentence()));
+			}
+		}
+		return moves;
 	}
 
 	@Override
@@ -141,7 +155,16 @@ public final class PropNetStateMachine extends StateMachine
 	@Override
 	public MachineState getNextState(MachineState state, List<Move> moves) throws TransitionDefinitionException {
 		// TODO Auto-generated method stub
-		return null;
+		setState(state);
+		setMoves(moves);
+		update();
+		List<GdlSentence> stateTerms = new ArrayList<GdlSentence>();
+		for (GdlTerm key : propnet.getBasePropositions().keySet()) {
+			if (propnet.getBasePropositions().get(key).getValue()) {
+				stateTerms.add(key.toSentence());
+			}
+		}
+		return new PropNetMachineState(stateTerms);
 	}
 
 	@Override
@@ -152,6 +175,13 @@ public final class PropNetStateMachine extends StateMachine
 	@Override
 	public List<Role> getRoles() {
 		return roles;
+	}
+	
+	private void setMoves(List<Move> moves) {
+		for (int i = 0; i < moves.size(); i++) {
+			GdlTerm doesState = GdlPool.getRelation(GdlPool.getConstant("does"), new GdlTerm[] { roles.get(i).getName().toTerm(), moves.get(i).getContents().toTerm() }).toTerm();
+			propnet.getInputPropositions().get(doesState).setValue(true);
+		}
 	}
 	
 	private void setState(MachineState state) {
