@@ -34,7 +34,12 @@ public class CloseGamer extends StateMachineGamer {
 	
 	//search termination;
 	private boolean done = false;
-	private int turn = 1;
+	private double best = -1;
+	
+	//heuristic values
+	private static final int numCharges = 2;
+	
+	
 	
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
@@ -46,6 +51,7 @@ public class CloseGamer extends StateMachineGamer {
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		long start = System.currentTimeMillis();
+		best = -1;
 		
 		FindMoveThread finder = new FindMoveThread(getStateMachine(), getCurrentState(), getRole());
 		finder.start();
@@ -69,8 +75,7 @@ public class CloseGamer extends StateMachineGamer {
 		long end = System.currentTimeMillis();
 		
         notifyObservers(new ReflexMoveSelectionEvent(legalMoves, selection, end - start));
-        System.out.println("Turn " + turn + " time = " + System.currentTimeMillis()); 
-        turn++;
+        System.out.println("Turn time = " + System.currentTimeMillis()); 
         return selection;
 	}
 	
@@ -105,49 +110,76 @@ public class CloseGamer extends StateMachineGamer {
 			int maxLevel = 1;
 			Move m = null;
 			try {
-				while (m == null && !stoppedEarly) {
-					done = false;
+				while (!stoppedEarly) {
 					//System.out.println("Now searching at depth " + maxLevel);
-					m = getMoveClosestToTerminal(stateMachine, currentState, role, 1, maxLevel, null);
+					getMoveClosestToTerminal(stateMachine, currentState, role, 1, maxLevel, null);
+					System.out.println("------------------------");
+					if (selection != null) System.out.println("ITERATION " + (maxLevel+1) + " // " + selection.toString());
+					System.out.println("");
 					maxLevel++;
 				}
-				if (stoppedEarly) selection = stateMachine.getRandomMove(currentState, role);
-			} catch (MoveDefinitionException e) {
+			} catch (GoalDefinitionException e) {
+				e.printStackTrace();
+			}
+			catch (MoveDefinitionException e) {
 				e.printStackTrace();
 			} catch (TransitionDefinitionException e) {
 				e.printStackTrace();
 			}
-			if (!stoppedEarly) selection = m;
 			foundMove = true;
 		}
 		
-		private Move getMoveClosestToTerminal(StateMachine stateMachine, MachineState currentState, Role role, int curLevel, int maxLevel, Move nextMove) throws MoveDefinitionException, TransitionDefinitionException {
+		private double getMoveClosestToTerminal(StateMachine stateMachine, MachineState currentState, Role role, int curLevel, int maxLevel, Move nextMove) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 			MachineState state = currentState;
-			if (!done && !stoppedEarly) {
+			double maxScore = -1;
+			if (!stoppedEarly) {
 				for (Move move : stateMachine.getLegalMoves(state, role)) {
-					for (List<Move> moveList : stateMachine.getLegalJointMoves(state, role, move)) { 
-						if (!done) {
-							if (curLevel==1) {
-								nextMove = move;
+					if (!stoppedEarly) {
+						double minScore = 101;
+						for (List<Move> moveList : stateMachine.getLegalJointMoves(state, role, move)) { 
+							if (!stoppedEarly) {
+								double myScore = 101;
+								if (curLevel==1) {
+									nextMove = move;
+								}
+								MachineState nextState = stateMachine.getNextState(state, moveList);
+								if (stateMachine.isTerminal(nextState)) {
+									myScore = stateMachine.getGoal(nextState, role);
+									//System.out.println("!! " + myScore + " !!");
+								}
+								else {
+									if (curLevel < maxLevel) {
+										myScore = getMoveClosestToTerminal(stateMachine, nextState, role, curLevel+1, maxLevel, nextMove);
+									}
+									else {
+										myScore = heuristic.eval(stateMachine, state, role)/2;
+									}
+								}
+								if (myScore<minScore || (myScore==minScore && stateMachine.isTerminal(nextState))) {
+									//System.out.println("%%% " + moveList.toString());
+									minScore = myScore;
+								}
+								
 							}
-							MachineState nextState = stateMachine.getNextState(state, moveList);
-							if (stateMachine.isTerminal(nextState)) {
-								//System.out.println("found a terminal state");
-								done = true;
-							}
-							if (curLevel < maxLevel  && !done) {
-								getMoveClosestToTerminal(stateMachine, nextState, role, curLevel+1, maxLevel, nextMove);
-							}	
+							//System.out.println("|||||");
+						}
+						//System.out.println("Move: " + move.toString() + ": expected score: " + minScore);
+						if (minScore > maxScore) {
+							maxScore = minScore;
+						}
+						if (minScore > best) {
+							System.out.println("UPDATED SELECTION!");
+							if (selection!=null) System.out.println("old move: " + selection.toString());
+							System.out.println("old score: " + best);
+							best = minScore;
+							selection = nextMove;
+							System.out.println("new move: " + selection.toString());
+							System.out.println("new score: " + best);
 						}
 					}
 				} 
 			}
-			if (done) {
-				//System.out.println("FOUND THE MOVE");
-				//System.out.println("curLevel: " + curLevel + "maxLevel: " + maxLevel + "nextMove" + nextMove.toString());
-				return nextMove;
-			}	
-			return null;
+			return maxScore;
 		}
 		
 		private boolean getMinimaxMove(StateMachine stateMachine, MachineState currentState, Role role, int maxLevel) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
