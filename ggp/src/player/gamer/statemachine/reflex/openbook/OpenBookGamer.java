@@ -282,11 +282,13 @@ public class OpenBookGamer extends StateMachineGamer {
 			//\System.out.println("ReverseThread started!");
 			List<MachineState> leadsToTerminal = new ArrayList<MachineState>();
 			double terminalValue = findBestMove(startState, role, leadsToTerminal);
-			endBook.put(startState, terminalValue);
-			//for (MachineState m : leadsToTerminal) {
-			//	endBook.put(m, terminalValue);
-			//}
-			System.out.println("Added new 'terminal' state with value " + terminalValue);
+			if (System.currentTimeMillis() < timeout - BUFFER) {
+				endBook.put(startState, terminalValue);
+				//for (MachineState m : leadsToTerminal) {
+				//	endBook.put(m, terminalValue);
+				//}
+				System.out.println("Added new 'terminal' state with value " + terminalValue);
+			}
 		}
 	}
 

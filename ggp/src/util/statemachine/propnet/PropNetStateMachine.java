@@ -16,6 +16,7 @@ import util.propnet.architecture.component.proposition.Proposition;
 import util.propnet.architecture.component.constant.Constant;
 import util.propnet.architecture.component.Component;
 import util.propnet.factory.PropNetFactory;
+import util.propnet.factorer.PropNetFactorer;
 import util.statemachine.MachineState;
 import util.statemachine.Move;
 import util.statemachine.Role;
@@ -49,7 +50,10 @@ public final class PropNetStateMachine extends StateMachine
 	@Override
 	public void intialize(List<Gdl> description) {
 		PropNetFactory factory = new PropNetFactory();
+		PropNetFactorer factorer = new PropNetFactorer();
 		propnet = factory.create(description);
+		//List<PropNet> propnets = factorer.factor(propnet);
+		//System.out.println(propnets.get(0).toString());
 		roles = computeRoles(description);
 		System.out.println("printing roles");
 		for (Role role : roles)
