@@ -50,6 +50,7 @@ public final class PropNetStateMachine extends StateMachine
 	public void intialize(List<Gdl> description) {
 		PropNetFactory factory = new PropNetFactory();
 		propnet = factory.create(description);
+		System.out.println(propnet.toString());
 		roles = computeRoles(description);
 		System.out.println("printing roles");
 		for (Role role : roles)
