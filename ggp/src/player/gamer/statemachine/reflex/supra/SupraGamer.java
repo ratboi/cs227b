@@ -9,8 +9,9 @@ import apps.player.detail.DetailPanel;
 import player.gamer.statemachine.StateMachineGamer;
 import player.gamer.statemachine.reflex.event.ReflexMoveSelectionEvent;
 import player.gamer.statemachine.reflex.gui.ReflexDetailPanel;
-import player.searcher.Searcher;
-import player.searcher.MinimaxCompleteSearcher;
+import player.heuristic.*;
+import player.searcher.HeuristicSearcher;
+import player.searcher.MinimaxHeuristicSearcher;
 import util.statemachine.MachineState;
 import util.statemachine.Move;
 import util.statemachine.StateMachine;
@@ -22,14 +23,16 @@ import util.statemachine.prover.cache.CachedProverStateMachine;
 public final class SupraGamer extends StateMachineGamer
 {
 	
-	private Searcher searcher;
+	private HeuristicSearcher searcher;
 	private Map<MachineState, Double> stateValues;
 
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
 		stateValues = new HashMap<MachineState, Double>();
-		searcher = new MinimaxCompleteSearcher(getStateMachine(), stateValues);
+		Heuristic heuristic = new OpponentFocusHeuristic();
+		searcher = new MinimaxHeuristicSearcher(getStateMachine(), stateValues, heuristic);
+		searcher.setMaxSearchLevel(1);
 	}
 
 	@Override

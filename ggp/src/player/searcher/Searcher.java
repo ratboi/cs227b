@@ -12,7 +12,9 @@ import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
 
 public abstract class Searcher {
-	
+
+	protected static final int MIN_SCORE = 0;
+	protected static final int MAX_SCORE = 100;
 	protected StateMachine machine;
 	protected Map<MachineState, Double> stateValues;
 	
