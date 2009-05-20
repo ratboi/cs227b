@@ -1,6 +1,8 @@
 package player.gamer.statemachine.reflex.supra;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import apps.player.detail.DetailPanel;
 
@@ -9,6 +11,7 @@ import player.gamer.statemachine.reflex.event.ReflexMoveSelectionEvent;
 import player.gamer.statemachine.reflex.gui.ReflexDetailPanel;
 import player.searcher.Searcher;
 import player.searcher.MinimaxSearcher;
+import util.statemachine.MachineState;
 import util.statemachine.Move;
 import util.statemachine.StateMachine;
 import util.statemachine.exceptions.GoalDefinitionException;
@@ -19,12 +22,14 @@ import util.statemachine.prover.cache.CachedProverStateMachine;
 public final class SupraGamer extends StateMachineGamer
 {
 	
-	Searcher searcher;
+	private Searcher searcher;
+	private Map<MachineState, Double> stateValues;
 
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
-		searcher = new MinimaxSearcher(getStateMachine());
+		stateValues = new HashMap<MachineState, Double>();
+		searcher = new MinimaxSearcher(getStateMachine(), stateValues);
 	}
 
 	@Override
