@@ -76,7 +76,7 @@ public class OpenBookGamer extends StateMachineGamer {
 		MachineState startState;
 		Role role;
 		private long timeout;
-		private final long BUFFER = 500;
+		private final long BUFFER = 1000;
 		private Heuristic heuristic = new MonteCarloHeuristic(5);
 		
 		public OpenBookThread(StateMachine machine, MachineState startState, Role role, long timeout) throws MoveDefinitionException, TransitionDefinitionException {
@@ -167,7 +167,7 @@ public class OpenBookGamer extends StateMachineGamer {
 		MachineState startState;
 		Role role;
 		private long timeout;
-		private final long BUFFER = 500;
+		private final long BUFFER = 1000;
 
 		public EndBookThread(StateMachine machine, MachineState startState, Role role, long timeout) throws MoveDefinitionException, TransitionDefinitionException {
 			this.startState = startState;
@@ -220,7 +220,7 @@ public class OpenBookGamer extends StateMachineGamer {
 		MachineState startState;
 		Role role;
 		private long timeout;
-		private final long BUFFER = 500;
+		private final long BUFFER = 1000;
 
 		public ReverseThread(StateMachine machine, MachineState startState, Role role, long timeout) throws MoveDefinitionException, TransitionDefinitionException {
 			this.startState = startState;
@@ -299,7 +299,7 @@ public class OpenBookGamer extends StateMachineGamer {
 		ActionListener taskPerformer = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				stoppedEarly = true;
-				//System.out.println("Early Termination!");
+				System.out.println("Early Termination!");
 			}
 		};
 		Timer t = new Timer((int) timeout - (int) start - BUFFER_TIME, taskPerformer);
@@ -315,7 +315,13 @@ public class OpenBookGamer extends StateMachineGamer {
 		move = new FindMoveThread(getStateMachine(), getCurrentState(), getRole());
 		move.start();
 
-		while (!foundMove);
+		while (!foundMove) {
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
+		}
 		t.stop();
 		foundMove = false;
 		stoppedEarly = false;
@@ -404,6 +410,7 @@ public class OpenBookGamer extends StateMachineGamer {
 			} catch (MoveDefinitionException e) {
 			} catch (TransitionDefinitionException e) {}
 			
+			System.out.println("FOUND MOVE");
 			foundMove = true;
 	    }
 	    

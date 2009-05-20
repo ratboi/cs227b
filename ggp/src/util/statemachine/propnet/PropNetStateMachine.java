@@ -13,6 +13,7 @@ import util.gdl.grammar.GdlTerm;
 import util.propnet.architecture.PropNet;
 import util.propnet.architecture.component.transition.Transition;
 import util.propnet.architecture.component.proposition.Proposition;
+import util.propnet.architecture.component.constant.Constant;
 import util.propnet.architecture.component.Component;
 import util.propnet.factory.PropNetFactory;
 import util.statemachine.MachineState;
@@ -34,6 +35,7 @@ public final class PropNetStateMachine extends StateMachine
 	private PropNet propnet = null;
 	private MachineState initialState;
 	private List<Role> roles;
+	private List<Component> transitions;
 	
 	/**
 	 * Your JavaDoc here.
@@ -94,9 +96,10 @@ public final class PropNetStateMachine extends StateMachine
 	}
 	
 	private synchronized MachineState computeInitialState() {
+		System.out.println("----COMPUTE INITIAL STATE---");
 		clearValues();
 		propnet.getInitProposition().setValue(true);
-		update(false);
+		update(true);
 		List<GdlSentence> stateTerms = new ArrayList<GdlSentence>();
 		for (GdlTerm key : propnet.getBasePropositions().keySet()) {
 			if (propnet.getBasePropositions().get(key).getValue()) {
@@ -112,42 +115,70 @@ public final class PropNetStateMachine extends StateMachine
 		}
 	}
 	
-	private synchronized void updateOne(Component currComp, List<Component> transitions) {
+	private synchronized void updateOne(Component currComp) {
 		if (!currComp.getValue() || currComp.equals(propnet.getTerminalProposition())) {
 			return;
 		}
 		for (Component comp : currComp.getOutputs()) {
 			if (comp instanceof Proposition) {
 				Proposition prop = (Proposition) comp;
-				//System.out.println("Truing this prop" + prop);
+				//System.out.println("UPDATEONE: Truing this prop" + prop);
 				prop.setValue(true);
 			}
-			if (comp instanceof Transition) {
+			if (comp instanceof Transition && !transitions.contains(comp)) {
 				transitions.add(comp);
 			}
 			if (!(comp instanceof Transition) && comp.getValue()) {
-				updateOne(comp, transitions);
+				updateOne(comp);
 			}
 		}
 	}
 	
 	private synchronized void update(boolean clearOld) {
-		List<Component> transitions = new ArrayList<Component>();
-		List<Component> trueComps = new ArrayList<Component>();
+		//System.out.println("---------------STARTING UPDATE-------------");
+		/*List<Component> trueComps = new ArrayList<Component>();
 		// grab all propositions that are true
 		for (Component comp : propnet.getComponents()) {
+			//if (comp.getValue() && (comp instanceof Proposition || comp instanceof Constant)) {
 			if (comp.getValue()) {
 				trueComps.add(comp);
 			}
 		}
 		for (Component comp : trueComps) {
-			updateOne(comp, transitions);
+			System.out.println("A TRUE COMP: " + comp);
+			updateOne(comp);
+		}*/
+		boolean updated = true;
+		//keep looping until no more props need to be updated
+		while (updated) {
+			updated = false;
+			for (Proposition prop : propnet.getPropositions()) {
+				//System.out.println(prop);
+				if (prop.getInputs().size() > 0) {
+					Component parent = prop.getInputs().get(0);
+					if (!(parent instanceof Transition) && parent.getValue() != prop.getValue()) {
+						//System.out.println("UPDATEONE: Setting this prop " + prop + " to " + parent.getValue());
+						prop.setValue(parent.getValue());
+						updated = true;
+						//break;
+					}
+				}
+			}
 		}
 		if (clearOld) {
+			transitions = new ArrayList<Component>();
+			for (Component comp : propnet.getComponents()) {
+				if (comp.getValue()) {
+					if (comp instanceof Transition && !transitions.contains(comp)) {
+						transitions.add(comp);
+					}
+				}
+			}
 			clearValues();
 			for (Component transition : transitions) {
 				for (Component comp : transition.getOutputs()) {
 					if (comp instanceof Proposition) {
+						//System.out.println("CLEAROLD: " + comp + " set to true.");
 						((Proposition)comp).setValue(true);
 					}
 				}
@@ -164,13 +195,13 @@ public final class PropNetStateMachine extends StateMachine
 		Proposition goalProp = null;
 		int numTrueGoalProps = 0;
 		for (Proposition prop : goalProps) {
-			System.out.println(prop.getName().toString());
+			//System.out.println(prop.getName().toString());
 			if (prop.getValue()) {
-				System.out.println("the above proposition is true!");
+				//System.out.println("the above proposition is true!");
 				goalProp = prop;
 				numTrueGoalProps++;
 			}
-			System.out.println("-------");
+			//System.out.println("-------");
 		}
 		if (numTrueGoalProps != 1) {
 			System.out.println("there are " + numTrueGoalProps + " true goal props instead of just 1");
@@ -225,7 +256,12 @@ public final class PropNetStateMachine extends StateMachine
 				stateTerms.add(key.toSentence());
 			}
 		}
-		return new PropNetMachineState(stateTerms);
+		//return new PropNetMachineState(stateTerms);
+		MachineState newState = new PropNetMachineState(stateTerms);
+		//System.out.println("OLD STATE: " + state);
+		//System.out.println("MOVES: " + moves);
+		//System.out.println("NEW STATE: " + newState);
+		return newState;
 	}
 
 	@Override
@@ -250,6 +286,7 @@ public final class PropNetStateMachine extends StateMachine
 		List<GdlSentence> contents = state.getContents();
 		Map<GdlTerm, Proposition> baseProps = propnet.getBasePropositions();
 		for (GdlSentence sentence : contents) {
+			//System.out.println(sentence);
 			Proposition prop = baseProps.get(sentence.toTerm());
 			prop.setValue(true);
 		}
