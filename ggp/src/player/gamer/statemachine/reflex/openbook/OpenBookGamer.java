@@ -63,7 +63,7 @@ public class OpenBookGamer extends StateMachineGamer {
 		OpenBookThread openBookThread = new OpenBookThread(getStateMachine(), getCurrentState(), getRole(), timeout);
 		openBookThread.start();
 		EndBookThread endBookThread = new EndBookThread(getStateMachine(), getCurrentState(), getRole(), timeout);
-		endBookThread.start();
+		//endBookThread.start();
 		while (System.currentTimeMillis() < timeout);
 		
 		// headstart

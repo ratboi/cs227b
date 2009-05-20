@@ -17,6 +17,7 @@ import util.statemachine.Move;
 import util.statemachine.StateMachine;
 import util.statemachine.MachineState;
 import util.statemachine.Role;
+import util.statemachine.propnet.*;
 import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
@@ -167,7 +168,7 @@ public class MediumGamer extends StateMachineGamer {
 	
 	@Override
 	public StateMachine getInitialStateMachine() {
-		return new CachedProverStateMachine();
+		return new PropNetStateMachine();
 	}
 
 	@Override
