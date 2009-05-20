@@ -10,7 +10,7 @@ import player.gamer.statemachine.StateMachineGamer;
 import player.gamer.statemachine.reflex.event.ReflexMoveSelectionEvent;
 import player.gamer.statemachine.reflex.gui.ReflexDetailPanel;
 import player.searcher.Searcher;
-import player.searcher.MinimaxSearcher;
+import player.searcher.MinimaxCompleteSearcher;
 import util.statemachine.MachineState;
 import util.statemachine.Move;
 import util.statemachine.StateMachine;
@@ -29,7 +29,7 @@ public final class SupraGamer extends StateMachineGamer
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
 		stateValues = new HashMap<MachineState, Double>();
-		searcher = new MinimaxSearcher(getStateMachine(), stateValues);
+		searcher = new MinimaxCompleteSearcher(getStateMachine(), stateValues);
 	}
 
 	@Override

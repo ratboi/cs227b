@@ -11,12 +11,12 @@ import util.statemachine.exceptions.GoalDefinitionException;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
 
-public class MinimaxSearcher extends Searcher {
+public class MinimaxCompleteSearcher extends Searcher {
 	
 	private static final int MIN_SCORE = 0;
 	private static final int MAX_SCORE = 100;
 	
-	public MinimaxSearcher(StateMachine machine, Map<MachineState, Double> stateValues) {
+	public MinimaxCompleteSearcher(StateMachine machine, Map<MachineState, Double> stateValues) {
 		super(machine, stateValues);
 	}
 
