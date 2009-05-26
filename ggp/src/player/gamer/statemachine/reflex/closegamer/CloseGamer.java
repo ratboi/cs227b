@@ -93,11 +93,18 @@ public class CloseGamer extends StateMachineGamer {
 		private Role role;
 		private List<Move> legalMoves;
 		private Move selection;
+		private Map<Move, Termination> earliestTerminations;
+		
+		private class Termination {
+			protected boolean winning;
+			protected int level;
+		}
 		
 		public FindMoveThread(StateMachine stateMachine, MachineState state, Role role) {
 			this.stateMachine = stateMachine;
 			this.currentState = state;
 			this.role = role;
+			earliestTerminations = new HashMap<Move, Termination>();
 		}
 		
 		public Move getSelection() {
@@ -114,9 +121,11 @@ public class CloseGamer extends StateMachineGamer {
 			} catch (MoveDefinitionException e) {
 				e.printStackTrace();
 			}
-			int maxLevel = 1;
-			Move m = null;
 			try {
+				selectMove(currentState);
+				/*
+				int maxLevel = 1;
+				Move m = null;
 				while (!stoppedEarly) {
 					//System.out.println("Now searching at depth " + maxLevel);
 					getMoveClosestToTerminal(stateMachine, currentState, role, 1, maxLevel, null);
@@ -125,15 +134,130 @@ public class CloseGamer extends StateMachineGamer {
 					System.out.println("");
 					maxLevel++;
 				}
+				*/
 			} catch (GoalDefinitionException e) {
 				e.printStackTrace();
-			}
-			catch (MoveDefinitionException e) {
+			} catch (MoveDefinitionException e) {
 				e.printStackTrace();
 			} catch (TransitionDefinitionException e) {
 				e.printStackTrace();
 			}
 			foundMove = true;
+		}
+		
+		private void selectMove(MachineState currentState) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+			List<Move> legalMoves = stateMachine.getLegalMoves(currentState, role);
+			selection = legalMoves.get(0);
+			if (legalMoves.size() == 1)
+				return;
+			
+			int maxLevel = 1;
+			while (!stoppedEarly) {
+				
+				// debug output
+				System.out.println("NOW SEARCHING FOR A MOVE USING A MAX LEVEL OF " + maxLevel);
+				System.out.println("----------------------------------------------------");
+				System.out.println("LEVEL 1");
+				
+				double maxScore = -1;
+				
+				Map<Move, Double> scores = new HashMap<Move, Double>();
+				for (Move move : legalMoves) {
+					if (!stoppedEarly) {
+						System.out.println("Trying move: " + move.toString());
+						double score = getMinScore(move, move, currentState, 1, maxLevel);
+						scores.put(move, score);
+						if (score >= maxScore) {
+							maxScore = score;
+							selection = move;
+						}
+					}
+				}
+				
+				// if there's a winning move, pick the one that wins soonest
+				int earliestWinLevel = -1;
+				for (Move move : legalMoves) {
+					if (earliestTerminations.containsKey(move)) {
+						Termination termination = earliestTerminations.get(move);
+						if (termination.winning && (termination.level < earliestWinLevel || earliestWinLevel == -1)) {
+							earliestWinLevel = termination.level;
+							selection = move;
+						}
+					}
+				}
+				
+				// if there are no winning moves, pick the one that loses the slowest
+				// if there are no losing terminations recorded, 'selection' will just be based on scores from minimax
+				/*
+				if (earliestWinLevel == -1) {
+					int latestLoseLevel = -1;
+					for (Move move : legalMoves) {
+						if (earliestTerminations.containsKey(move)) {
+							Termination termination = earliestTerminations.get(move);
+							if (termination.level > latestLoseLevel) {
+								latestLoseLevel = termination.level;
+								selection = move;
+							}
+						}
+					}
+				}
+				*/
+				
+				// TODO how to remember which was the winning move if tracking foundWinning and foundLosing?
+				maxLevel++;
+			}
+		}
+		
+		private double getMinScore(Move initialMove, Move latestMove, MachineState currentState, int curLevel, int maxLevel) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+			double minScore = 101;
+			List<List<Move> > jointMoves = stateMachine.getLegalJointMoves(currentState, role, latestMove);
+			for (List<Move> jointMove : jointMoves) {
+				if (!stoppedEarly) {
+					MachineState nextState = stateMachine.getNextState(currentState, jointMove);
+					
+					// debug output
+					for (int i = 0; i < curLevel; i++)
+						System.out.print("\t");
+					System.out.println("Trying joint move: " + jointMove.toString());
+					for (int i = 0; i < curLevel; i++)
+						System.out.print("\t");
+					System.out.println("Got this state: " + nextState.toString());
+					
+					double score;
+					if (stateMachine.isTerminal(nextState)) {
+						score = stateMachine.getGoal(nextState, role);
+						
+						// debug output
+						for (int i = 0; i < curLevel; i++)
+							System.out.print("\t");
+						System.out.println("state is terminal, value is: " + score);
+						
+						if (!earliestTerminations.containsKey(initialMove) || earliestTerminations.get(initialMove).level > curLevel) {
+							Termination termination = new Termination();
+							termination.winning = (score == 100);
+							termination.level = curLevel;
+							earliestTerminations.put(initialMove, termination);
+						}
+					} else if (curLevel == maxLevel) {
+						score = heuristic.eval(stateMachine, nextState, role) / 2;
+						//score = -score - 1; // TODO how to compare scores if one is always the inverse minus one?
+					} else {
+						score = getMaxScore(initialMove, nextState, curLevel + 1, maxLevel); // TODO fix this
+					}
+					minScore = Math.min(score, minScore);
+				}
+			}
+			return minScore;
+		}
+		
+		private double getMaxScore(Move initialMove, MachineState currentState, int curLevel, int maxLevel) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+			double maxScore = 0;
+			List<Move> legalMoves = stateMachine.getLegalMoves(currentState, role);
+			for (Move move : legalMoves) {
+				double score = getMinScore(initialMove, move, currentState, curLevel, maxLevel);
+				maxScore = Math.max(score, maxScore);
+			}
+			return maxScore;
 		}
 		
 		private double getMoveClosestToTerminal(StateMachine stateMachine, MachineState currentState, Role role, int curLevel, int maxLevel, Move nextMove) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
@@ -196,57 +320,6 @@ public class CloseGamer extends StateMachineGamer {
 			return maxScore;
 		}
 		
-		private boolean getMinimaxMove(StateMachine stateMachine, MachineState currentState, Role role, int maxLevel) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
-			double maxScore = -1;
-			selection = null;
-			for (Move move : stateMachine.getLegalMoves(currentState, role)) {
-				if (stoppedEarly) {
-					return false;
-				}
-				double score = getMinScore(stateMachine, currentState, role, move, 1, maxLevel);
-				if (score >= maxScore) {
-					maxScore = score;
-					selection = move;
-				}
-			}
-			return true;
-		}
-		
-		private double getMinScore(StateMachine machine, MachineState currentState, Role role, Move move, int level, int maxLevel) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
-			double minScore = 101;
-			for (List<Move> jointMove : machine.getLegalJointMoves(currentState, role, move)) {
-				if (stoppedEarly) {
-					return minScore;
-				}
-				MachineState nextState = machine.getNextState(currentState, jointMove);
-				double score;
-				if (stateValues.containsKey(nextState))
-					score = stateValues.get(nextState);
-				else {
-					score = getMaxScore(machine, nextState, role, level, maxLevel);
-					stateValues.put(nextState, score);
-				}
-				minScore = Math.min(minScore, score);
-			}
-			return minScore;
-		}
-		
-		private double getMaxScore(StateMachine machine, MachineState state, Role role, int level, int maxLevel) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
-			//System.out.println("level " + level);
-			if (machine.isTerminal(state))
-				return machine.getGoal(state, role);
-			if (level == maxLevel) {
-				double heuristicScore = heuristic.eval(machine, state, role);
-				return heuristicScore;
-			}
-			double maxScore = -1.0;
-			for (Move move : machine.getLegalMoves(state, role)) {
-				if (stoppedEarly)
-					return maxScore;
-				maxScore = Math.max(maxScore, getMinScore(machine, state, role, move, level + 1, maxLevel));
-			}
-			return maxScore;
-		}
 	}
 
 	@Override
