@@ -50,7 +50,7 @@ public final class PropNetStateMachine extends StateMachine
 	@Override
 	public void intialize(List<Gdl> description) {
 		PropNetFactory factory = new PropNetFactory();
-		PropNetFactorer factorer = new PropNetFactorer();
+		//PropNetFactorer factorer = new PropNetFactorer();
 		propnet = factory.create(description);
 		//List<PropNet> propnets = factorer.factor(propnet);
 		//propnet = propnets.get(0);
