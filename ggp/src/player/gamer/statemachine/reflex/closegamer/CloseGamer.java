@@ -64,7 +64,14 @@ public class CloseGamer extends StateMachineGamer {
 		Timer t = new Timer((int) timeout - (int) start - BUFFER_TIME, taskPerformer);
 		t.setRepeats(false);
 		t.start();
-		while (!foundMove);
+		while (!foundMove) {
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		}
 		t.stop();
 		stoppedEarly = false;
 		foundMove = false;

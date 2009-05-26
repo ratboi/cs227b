@@ -53,8 +53,9 @@ public final class PropNetStateMachine extends StateMachine
 		PropNetFactorer factorer = new PropNetFactorer();
 		propnet = factory.create(description);
 		//List<PropNet> propnets = factorer.factor(propnet);
+		//propnet = propnets.get(0);
 		//System.out.println(propnets.get(0).toString());
-		System.out.println(propnet.toString());
+		//System.out.println(propnet.toString());
 		roles = computeRoles(description);
 		System.out.println("printing roles");
 		for (Role role : roles)
