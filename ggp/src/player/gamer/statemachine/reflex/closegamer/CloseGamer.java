@@ -132,20 +132,24 @@ public class CloseGamer extends StateMachineGamer {
 		private double getMoveClosestToTerminal(StateMachine stateMachine, MachineState currentState, Role role, int curLevel, int maxLevel, Move nextMove) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 			MachineState state = currentState;
 			double maxScore = -1;
+			System.out.println(stateMachine.getLegalMoves(state, role).size());
 			if (!stoppedEarly) {
 				for (Move move : stateMachine.getLegalMoves(state, role)) {
 					if (!stoppedEarly) {
 						double minScore = 101;
+						System.out.println(stateMachine.getLegalJointMoves(state, role, move).size());
 						for (List<Move> moveList : stateMachine.getLegalJointMoves(state, role, move)) { 
 							if (!stoppedEarly) {
 								double myScore = 101;
+								System.out.println("CurLevel = " + curLevel);
 								if (curLevel==1) {
 									nextMove = move;
+									System.out.println("NEXT MOVE : " + nextMove.toString());
 								}
 								MachineState nextState = stateMachine.getNextState(state, moveList);
 								if (stateMachine.isTerminal(nextState)) {
 									myScore = stateMachine.getGoal(nextState, role);
-									//System.out.println("!! " + myScore + " !!");
+									System.out.println("!! " + myScore + " !!");
 								}
 								else {
 									if (curLevel < maxLevel) {
@@ -156,14 +160,14 @@ public class CloseGamer extends StateMachineGamer {
 									}
 								}
 								if (myScore<minScore || (myScore==minScore && stateMachine.isTerminal(nextState))) {
-									//System.out.println("%%% " + moveList.toString());
+									System.out.println("%%% " + moveList.toString());
 									minScore = myScore;
 								}
 								
 							}
-							//System.out.println("|||||");
+							System.out.println("|||||");
 						}
-						//System.out.println("Move: " + move.toString() + ": expected score: " + minScore);
+						System.out.println("Move: " + move.toString() + ": expected score: " + minScore);
 						if (minScore > maxScore) {
 							maxScore = minScore;
 						}
@@ -173,8 +177,11 @@ public class CloseGamer extends StateMachineGamer {
 							System.out.println("old score: " + best);
 							best = minScore;
 							selection = nextMove;
-							System.out.println("new move: " + selection.toString());
-							System.out.println("new score: " + best);
+							// TODO note: new selection shouldn't technically ever be null, debug this
+							if (selection != null) {
+								System.out.println("new move: " + selection.toString());
+								System.out.println("new score: " + best);
+							}
 						}
 					}
 				} 
