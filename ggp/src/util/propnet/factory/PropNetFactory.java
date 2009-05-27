@@ -43,7 +43,8 @@ public final class PropNetFactory
 	 */
 	public PropNet create(List<Gdl> description)
 	{
-		List<GdlRule> flatDescription = flattener.flatten(description);
+		EthansFlattener EF = new EthansFlattener(description);
+		List<GdlRule> flatDescription = EF.flatten();
 		return converter.convert(flatDescription);
 	}
 
