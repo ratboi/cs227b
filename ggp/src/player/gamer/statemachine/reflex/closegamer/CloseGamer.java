@@ -3,8 +3,10 @@ package player.gamer.statemachine.reflex.closegamer;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.Timer;
 
@@ -30,6 +32,7 @@ public class CloseGamer extends StateMachineGamer {
 	
 	// search-related variables
 	private Heuristic heuristic;
+	private Map<MachineState, CachedTermination> terminatingStates = new HashMap<MachineState, CachedTermination>();
 	private Map<MachineState, Double> stateValues;
 	
 	//search termination;
@@ -84,6 +87,11 @@ public class CloseGamer extends StateMachineGamer {
         notifyObservers(new ReflexMoveSelectionEvent(legalMoves, selection, end - start));
         System.out.println("Turn time = " + System.currentTimeMillis()); 
         return selection;
+	}
+	
+	private class CachedTermination {
+		double score;
+		int distanceToTerminal;
 	}
 	
 	private class FindMoveThread extends Thread {
@@ -152,22 +160,25 @@ public class CloseGamer extends StateMachineGamer {
 				return;
 			
 			int maxLevel = 1;
+			boolean foundTie = false;
+			
+			Map<Move, Double> scores = new HashMap<Move, Double>();
 			while (!stoppedEarly) {
-				
+				earliestTerminations.clear();
+
 				// debug output
 				System.out.println("NOW SEARCHING FOR A MOVE USING A MAX LEVEL OF " + maxLevel);
 				System.out.println("----------------------------------------------------");
-				System.out.println("LEVEL 1");
+				System.out.println("TerminatingStates contains " + terminatingStates.size() + " elements.\n\n");
 				
-				double maxScore = -1;
+				double maxScore = 0;
 				
-				Map<Move, Double> scores = new HashMap<Move, Double>();
 				for (Move move : legalMoves) {
 					if (!stoppedEarly) {
 						System.out.println("Trying move: " + move.toString());
 						double score = getMinScore(move, move, currentState, 1, maxLevel);
-						scores.put(move, score);
-						if (score >= maxScore) {
+						System.out.println("score = " + score + "\n");
+						if (score > maxScore) {
 							maxScore = score;
 							selection = move;
 						}
@@ -186,6 +197,23 @@ public class CloseGamer extends StateMachineGamer {
 					}
 				}
 				
+				if (selection!=null) System.out.println("MOVE = " + selection.toString());
+				
+				if (earliestWinLevel!=-1) {
+					System.out.println("FOUND WINNING MOVE!");
+					System.out.println("size of terminations = " + earliestTerminations.size());
+					if (earliestTerminations.containsKey(selection)) { 
+						System.out.println("Yes, it terminates somewhere.");
+						Termination termination = earliestTerminations.get(selection);
+						System.out.println("will win in " + termination.level + " turns");
+						if (termination.winning) System.out.println("winning move");
+					}
+					break; 				
+				}
+				if (earliestTerminations.size() == legalMoves.size()) {
+					System.out.println("ALL MOVES LEAD TO NON-WINNING TERMINAL STATES!");
+					break;
+				}
 				// if there are no winning moves, pick the one that loses the slowest
 				// if there are no losing terminations recorded, 'selection' will just be based on scores from minimax
 				/*
@@ -216,21 +244,45 @@ public class CloseGamer extends StateMachineGamer {
 					MachineState nextState = stateMachine.getNextState(currentState, jointMove);
 					
 					// debug output
-					for (int i = 0; i < curLevel; i++)
-						System.out.print("\t");
-					System.out.println("Trying joint move: " + jointMove.toString());
-					for (int i = 0; i < curLevel; i++)
-						System.out.print("\t");
-					System.out.println("Got this state: " + nextState.toString());
+//					for (int i = 0; i < curLevel; i++)
+//						System.out.print("\t");
+//					System.out.println("Trying joint move: " + jointMove.toString());
+//					for (int i = 0; i < curLevel; i++)
+//						System.out.print("\t");
+//					System.out.println("Got this state: " + nextState.toString());
 					
 					double score;
-					if (stateMachine.isTerminal(nextState)) {
+					if (terminatingStates.containsKey(nextState)) {
+						score = terminatingStates.get(nextState).score;
+						
+						if (!earliestTerminations.containsKey(initialMove) || earliestTerminations.get(initialMove).level > curLevel + terminatingStates.get(nextState).distanceToTerminal) {
+							Termination termination = new Termination();
+							termination.winning = (score == 100);
+							termination.level = curLevel + terminatingStates.get(nextState).distanceToTerminal;
+							earliestTerminations.put(initialMove, termination);
+						}
+					}
+					else if (stateMachine.isTerminal(nextState)) {
 						score = stateMachine.getGoal(nextState, role);
+						System.out.println("%%%Found Terminal State%%% - score: " + score);
+						//add current state
+						CachedTermination cachedNext = new CachedTermination();
+						cachedNext.score = score;
+						cachedNext.distanceToTerminal = 0;
+						terminatingStates.put(nextState, cachedNext);
+						
+						//add previous state
+						CachedTermination cachedPrevious = new CachedTermination();
+						cachedPrevious.score = score;
+						cachedPrevious.distanceToTerminal = 1;
+						terminatingStates.put(currentState, cachedPrevious);
+						
+						//System.out.println("Found terminal state for score " + score);
 						
 						// debug output
-						for (int i = 0; i < curLevel; i++)
-							System.out.print("\t");
-						System.out.println("state is terminal, value is: " + score);
+//						for (int i = 0; i < curLevel; i++)
+//							System.out.print("\t");
+//						System.out.println("state is terminal, value is: " + score);
 						
 						if (!earliestTerminations.containsKey(initialMove) || earliestTerminations.get(initialMove).level > curLevel) {
 							Termination termination = new Termination();
@@ -239,10 +291,18 @@ public class CloseGamer extends StateMachineGamer {
 							earliestTerminations.put(initialMove, termination);
 						}
 					} else if (curLevel == maxLevel) {
-						score = heuristic.eval(stateMachine, nextState, role) / 2;
+						score = heuristic.eval(stateMachine, nextState, role) / 2 - 1;
 						//score = -score - 1; // TODO how to compare scores if one is always the inverse minus one?
+						//System.out.println("Using heuristic for score " + score);
 					} else {
 						score = getMaxScore(initialMove, nextState, curLevel + 1, maxLevel); // TODO fix this
+						//System.out.println("Recursing to level " + (curLevel + 1));
+					}
+					if (terminatingStates.containsKey(nextState)) {
+						CachedTermination cachedTermination = new CachedTermination();
+						cachedTermination.score = score;
+						cachedTermination.distanceToTerminal = terminatingStates.get(nextState).distanceToTerminal + 1;
+						terminatingStates.put(nextState, cachedTermination);
 					}
 					minScore = Math.min(score, minScore);
 				}
