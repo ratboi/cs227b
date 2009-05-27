@@ -239,6 +239,8 @@ public class CloseGamer extends StateMachineGamer {
 		private double getMinScore(Move initialMove, Move latestMove, MachineState currentState, int curLevel, int maxLevel) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 			double minScore = 101;
 			List<List<Move> > jointMoves = stateMachine.getLegalJointMoves(currentState, role, latestMove);
+			MachineState chosenNextState = null;
+			boolean choseTerminalState = false;
 			for (List<Move> jointMove : jointMoves) {
 				if (!stoppedEarly) {
 					MachineState nextState = stateMachine.getNextState(currentState, jointMove);
@@ -251,45 +253,15 @@ public class CloseGamer extends StateMachineGamer {
 //						System.out.print("\t");
 //					System.out.println("Got this state: " + nextState.toString());
 					
+					// figure out a score for the nextState we're testing
 					double score;
+					boolean isTerminal = false;
 					if (terminatingStates.containsKey(nextState)) {
 						score = terminatingStates.get(nextState).score;
-						
-						if (!earliestTerminations.containsKey(initialMove) || earliestTerminations.get(initialMove).level > curLevel + terminatingStates.get(nextState).distanceToTerminal) {
-							Termination termination = new Termination();
-							termination.winning = (score == 100);
-							termination.level = curLevel + terminatingStates.get(nextState).distanceToTerminal;
-							earliestTerminations.put(initialMove, termination);
-						}
-					}
-					else if (stateMachine.isTerminal(nextState)) {
+						isTerminal = true;
+					} else if (stateMachine.isTerminal(nextState)) {
 						score = stateMachine.getGoal(nextState, role);
-						System.out.println("%%%Found Terminal State%%% - score: " + score);
-						//add current state
-						CachedTermination cachedNext = new CachedTermination();
-						cachedNext.score = score;
-						cachedNext.distanceToTerminal = 0;
-						terminatingStates.put(nextState, cachedNext);
-						
-						//add previous state
-						CachedTermination cachedPrevious = new CachedTermination();
-						cachedPrevious.score = score;
-						cachedPrevious.distanceToTerminal = 1;
-						terminatingStates.put(currentState, cachedPrevious);
-						
-						//System.out.println("Found terminal state for score " + score);
-						
-						// debug output
-//						for (int i = 0; i < curLevel; i++)
-//							System.out.print("\t");
-//						System.out.println("state is terminal, value is: " + score);
-						
-						if (!earliestTerminations.containsKey(initialMove) || earliestTerminations.get(initialMove).level > curLevel) {
-							Termination termination = new Termination();
-							termination.winning = (score == 100);
-							termination.level = curLevel;
-							earliestTerminations.put(initialMove, termination);
-						}
+						isTerminal = true;
 					} else if (curLevel == maxLevel) {
 						score = heuristic.eval(stateMachine, nextState, role) / 2 - 1;
 						//score = -score - 1; // TODO how to compare scores if one is always the inverse minus one?
@@ -298,15 +270,46 @@ public class CloseGamer extends StateMachineGamer {
 						score = getMaxScore(initialMove, nextState, curLevel + 1, maxLevel); // TODO fix this
 						//System.out.println("Recursing to level " + (curLevel + 1));
 					}
-					if (terminatingStates.containsKey(nextState)) {
-						CachedTermination cachedTermination = new CachedTermination();
-						cachedTermination.score = score;
-						cachedTermination.distanceToTerminal = terminatingStates.get(nextState).distanceToTerminal + 1;
-						terminatingStates.put(nextState, cachedTermination);
+					
+					// update minScore if the current score we're testing is better
+					if (score <= minScore) {
+						minScore = score;
+						chosenNextState = nextState;
+						choseTerminalState = isTerminal;
 					}
-					minScore = Math.min(score, minScore);
 				}
 			}
+			
+			if (choseTerminalState) {
+				System.out.println("%%%Found Terminal State%%% - score: " + minScore);
+				
+				// store in cache if it isn't already in there
+				if (terminatingStates.containsKey(chosenNextState)) {
+					//add current state
+					CachedTermination cachedNext = new CachedTermination();
+					cachedNext.score = minScore;
+					cachedNext.distanceToTerminal = 0;
+					terminatingStates.put(chosenNextState, cachedNext);
+				}
+				
+				// update earliest termination for the move that started it all
+				if (!earliestTerminations.containsKey(initialMove) || earliestTerminations.get(initialMove).level > curLevel + terminatingStates.get(chosenNextState).distanceToTerminal) {
+					Termination termination = new Termination();
+					termination.winning = (minScore == 100);
+					termination.level = curLevel + terminatingStates.get(chosenNextState).distanceToTerminal;
+					earliestTerminations.put(initialMove, termination);
+				}
+			}
+			
+			
+			// we know chosen next state is terminal, so we should propagate that up to currentState as well
+			if (terminatingStates.containsKey(chosenNextState)) {
+				CachedTermination cachedTermination = new CachedTermination();
+				cachedTermination.score = minScore;
+				cachedTermination.distanceToTerminal = terminatingStates.get(chosenNextState).distanceToTerminal + 1;
+				terminatingStates.put(currentState, cachedTermination);
+			}
+			
 			return minScore;
 		}
 		
