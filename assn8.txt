@@ -25,3 +25,9 @@ Search Strategy Implementation:
 	- If we don't find an optimal terminal state, we keep track of the minimax score (based on a heuristic) for each state at the bottom of our search tree
 	- The heuristic score is also halved so we will prioritize them less than actual terminal states.
 	- We use Monte Carlo as our heuristic
+	
+...blah blah...
+
+Defensive Endbook Close Gamer
+-----------------------------
+Our previous gamer still did not utilize the time allocated for the metagaming period, so we decided to add the endbook we implemented in a previous assignment.  The endbook helps because it caches states and their minimax scores so we save computation time.
