@@ -1,0 +1,27 @@
+Initial Design - Close Gamer
+-----------------------------
+Our initial design at the start of the week consisted of a simple search strategy, with no metagaming tactics.  We wanted to focus on strengthening our search strategy before utilizing metagaming tactics.
+
+Search Strategy Implementation:
+- Minimax with iterative deepening (increase max search level with each iteration)
+- For each iteration of iterative deepening:
+	- We choose the move that leads to the closest optimal terminal state (i.e. score of 100)
+	- If we don't find an optimal terminal state, we keep track of the minimax score (based on a heuristic) for each state at the bottom of our search tree
+	- The heuristic score is also halved so we will prioritize them less than actual terminal states.
+	- We use Monte Carlo as our heuristic
+
+This strategy works decently well on games like Tic-Tac-Toe and Connect Four.  Once our player sees a close solution, it chooses moves that lead directly to that state.  This is better than our previous player who just kept track of goal scores without taking into account how many moves it took to get there.  The more moves it took to reach an optimal goal state, the more likely it was for the opponent to interfere.
+
+However, we noticed our player did not play defensively at all, because once it locked onto a state with a 100 goal value, it went directly for it.  It didn't notice if the opponent was going to win first before the player could reach this 100 goal state.  This would translate to, for Tic-Tac-Toe, not noticing that it should block the opponent when the opponent has 2 in a row.  So we came up with a new design that took this into account.
+
+Defensive Close Gamer
+----------------------
+The implementation for the defensive close gamer is similar to the regular close gamer.  The only difference is that we will also look for the closest death terminal state (i.e. score of 0) in our iterative deepening, and avoid the move that leads to that state.  That way, if we do find a good terminal state somewhere at a level deeper than where we find a bad terminal state, we will defend against the bad terminal state instead of trying to reach the good terminal state and letting our opponent win.
+
+Search Strategy Implementation:
+- Minimax with iterative deepening (increase max search level with each iteration)
+- For each iteration of iterative deepening:
+	- We choose the move that leads to the closest optimal terminal state (i.e. score of 100)
+	- If we don't find an optimal terminal state, we keep track of the minimax score (based on a heuristic) for each state at the bottom of our search tree
+	- The heuristic score is also halved so we will prioritize them less than actual terminal states.
+	- We use Monte Carlo as our heuristic
