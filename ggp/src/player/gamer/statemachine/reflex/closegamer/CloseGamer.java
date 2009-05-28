@@ -58,7 +58,7 @@ public class CloseGamer extends StateMachineGamer {
 		stateValues = new HashMap<MachineState, Double>();
 		
 		EndBookThread endBookThread = new EndBookThread(getStateMachine(), getCurrentState(), getRole(), timeout);
-		endBookThread.start();
+		//endBookThread.start();
 		
 		while (System.currentTimeMillis() < timeout) {
 			try {
@@ -191,6 +191,7 @@ public class CloseGamer extends StateMachineGamer {
 				System.out.println("TerminatingStates contains " + terminatingStates.size() + " elements.\n\n");
 				
 				double maxScore = 0;
+				Move tentativeSelection = null;
 				
 				for (Move move : legalMoves) {
 					if (!stoppedEarly) {
@@ -199,11 +200,11 @@ public class CloseGamer extends StateMachineGamer {
 						System.out.println("score = " + score + "\n");
 						if (score > maxScore) {
 							maxScore = score;
-							selection = move;
+							tentativeSelection = move;
 						}
 					}
 				}
-				
+				if (!stoppedEarly) selection = tentativeSelection;
 				// if there's a winning move, pick the one that wins soonest
 				int earliestWinLevel = -1;
 				for (Move move : legalMoves) {
@@ -286,7 +287,12 @@ public class CloseGamer extends StateMachineGamer {
 						score = stateMachine.getGoal(nextState, role);
 						isTerminal = true;
 					} else if (curLevel == maxLevel) {
-						score = heuristic.eval(stateMachine, nextState, role) / 2 - 1;
+						double heuristicValue = heuristic.eval(stateMachine, nextState, role) / 2;
+						if (heuristicValue >= 25)
+							heuristicValue--;
+						else
+							heuristicValue++;
+						score = heuristicValue;
 						//score = -score - 1; // TODO how to compare scores if one is always the inverse minus one?
 						//System.out.println("Using heuristic for score " + score);
 					} else {
@@ -307,8 +313,8 @@ public class CloseGamer extends StateMachineGamer {
 				System.out.println("%%%Found Terminal State%%% - score: " + minScore);
 				
 				// store in cache if it isn't already in there
-				if (terminatingStates.containsKey(chosenNextState)) {
-					//add current state
+				if (!terminatingStates.containsKey(chosenNextState)) {
+					//add chosen next state
 					CachedTermination cachedNext = new CachedTermination();
 					cachedNext.score = minScore;
 					cachedNext.distanceToTerminal = 0;
