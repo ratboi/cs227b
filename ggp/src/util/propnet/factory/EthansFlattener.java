@@ -2,6 +2,7 @@ package util.propnet.factory;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -217,7 +218,7 @@ public class EthansFlattener {
 						throw new RuntimeException("Shouldn't instantiate anything to null.");
 					rval.add(getInstantiation(r.originalRule, varInstantiation));
 					if(rval.get(rval.size()-1).toString().contains("null"))
-						throw new RuntimeException("Shouldn't instantiate anything to null.");
+						throw new RuntimeException("Shouldn't instantiate anything to null: "+rval.get(rval.size()-1).toString());
 				}
 			}
 		}
@@ -249,6 +250,9 @@ public class EthansFlattener {
 				if(rval.get(rval.size()-1).toString().contains("null"))
 					throw new RuntimeException("Shouldn't instantiate anything to null.");
 			}
+			
+			if(varInstantiations.size() == 0)
+				rval.add(getInstantiation(r.originalRule, new HashMap<GdlVariable,GdlConstant>()));
 		}
 		
 		return rval;
@@ -646,6 +650,30 @@ public class EthansFlattener {
 							d.addAssignmentToIndex(a);
 						}
 					}
+					if(instantiations.size() == 0)
+					{ //There might just be no variables in the rule
+						Assignment a = new Assignment();
+						findSatisfyingInstantiations(ruleRef); //just for debugging
+						boolean isVar = false;
+						for(GdlTerm t : ruleRef.productionTemplate)
+						{
+							if(t instanceof GdlConstant)
+								a.add((GdlConstant)t);
+							else
+							{
+								//There's a variable and we didn't find an instantiation
+								isVar = true;
+								break;
+							}								
+						}
+						if(!isVar && !d.assignments.contains(a))
+						{
+							currUpdatedDomains.add(d);
+							d.assignments.add(a);
+							changedSomething = true;
+							d.addAssignmentToIndex(a);
+						}
+					}
 				}
 			}
 			itrNum++;
@@ -743,7 +771,7 @@ public class EthansFlattener {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		File c4 = new File(new File("games","rulesheets"),"mummyMaze2p.kif");
+		File c4 = new File(new File("games","rulesheets"),"asteroids.kif");
 		List<Gdl> description = null;
 		try {
 			description = KifReader.read(c4.getAbsolutePath());
@@ -751,7 +779,15 @@ public class EthansFlattener {
 		
 		EthansFlattener aa = new EthansFlattener(description);
 		List<GdlRule> flattened = aa.flatten();
-		System.out.println("Flattened description for connect four contains: \n"+flattened.size());
+		System.out.println("Flattened description for connect four contains: \n"+flattened.size()+"\n\n");
+		
+		List<String> strings = new ArrayList<String>();
+		for(GdlRule rule : flattened)
+			strings.add(rule.toString());
+		Collections.sort(strings);
+		
+		for(String s : strings)
+			System.out.println(s);
 //		PropNetConverter pc = new PropNetConverter();
 //		PropNet p = pc.convert(flattened);
 //		System.out.println("Converted to propnet.");
