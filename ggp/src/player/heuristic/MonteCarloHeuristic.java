@@ -12,7 +12,7 @@ import util.statemachine.exceptions.GoalDefinitionException;
 
 public class MonteCarloHeuristic implements Heuristic {
 
-	public int numCharges = 1;
+	public int numCharges = 3;
 	
 	public MonteCarloHeuristic() {}
 	

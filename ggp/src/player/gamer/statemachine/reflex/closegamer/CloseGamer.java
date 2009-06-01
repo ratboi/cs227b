@@ -18,7 +18,7 @@ import player.gamer.statemachine.reflex.openbook.OpenBookGamer.EndBookThread;
 import player.gamer.statemachine.reflex.openbook.OpenBookGamer.ReverseThread;
 import player.heuristic.Heuristic;
 import player.heuristic.MonteCarloHeuristic;
-import util.statemachine.propnet.PropNetStateMachine;
+import util.statemachine.propnet.CachedPropNetStateMachine;
 import util.statemachine.MachineState;
 import util.statemachine.Move;
 import util.statemachine.Role;
@@ -416,7 +416,7 @@ public class CloseGamer extends StateMachineGamer {
 
 	@Override
 	public StateMachine getInitialStateMachine() {
-		return new PropNetStateMachine();
+		return new CachedPropNetStateMachine();
 	}
 
 	@Override

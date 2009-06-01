@@ -31,7 +31,7 @@ import util.statemachine.prover.ProverRole;
  * The PropNetStateMachine class is an implementation of a StateMachine, backed
  * by a Propositional Network.
  */
-public final class PropNetStateMachine extends StateMachine
+public class PropNetStateMachine extends StateMachine
 {
 	private PropNet propnet = null;
 	private MachineState initialState;
