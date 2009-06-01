@@ -64,7 +64,6 @@ public class CloseGamer extends StateMachineGamer {
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 		}
@@ -90,7 +89,6 @@ public class CloseGamer extends StateMachineGamer {
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 		}
@@ -149,7 +147,7 @@ public class CloseGamer extends StateMachineGamer {
 				e.printStackTrace();
 			}
 			try {
-				selectMove(currentState);
+				selectMove(currentState, legalMoves);
 				/*
 				int maxLevel = 1;
 				Move m = null;
@@ -172,14 +170,14 @@ public class CloseGamer extends StateMachineGamer {
 			foundMove = true;
 		}
 		
-		private void selectMove(MachineState currentState) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
-			List<Move> legalMoves = stateMachine.getLegalMoves(currentState, role);
+		private void selectMove(MachineState currentState, List<Move> legalMoves) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+			// if there's only one move available, immediately return it
 			selection = legalMoves.get(0);
 			if (legalMoves.size() == 1)
 				return;
 			
 			int maxLevel = 1;
-			boolean foundTie = false;
+			boolean foundTie = false; // TODO detect tie cases; also: how do we remember which was the winning move if we found a tie?
 			
 			Map<Move, Double> scores = new HashMap<Move, Double>();
 			while (!stoppedEarly) {
@@ -192,7 +190,8 @@ public class CloseGamer extends StateMachineGamer {
 				
 				double maxScore = 0;
 				Move tentativeSelection = null;
-				
+
+				// find the move that results in the maximum score
 				for (Move move : legalMoves) {
 					if (!stoppedEarly) {
 						System.out.println("Trying move: " + move.toString());
@@ -204,7 +203,9 @@ public class CloseGamer extends StateMachineGamer {
 						}
 					}
 				}
-				if (!stoppedEarly) selection = tentativeSelection;
+				if (!stoppedEarly)
+					selection = tentativeSelection;
+				
 				// if there's a winning move, pick the one that wins soonest
 				int earliestWinLevel = -1;
 				for (Move move : legalMoves) {
@@ -216,24 +217,25 @@ public class CloseGamer extends StateMachineGamer {
 						}
 					}
 				}
-				
-				if (selection!=null) System.out.println("MOVE = " + selection.toString());
-				
-				if (earliestWinLevel!=-1) {
+				if (selection != null)
+					System.out.println("MOVE = " + selection.toString());
+				if (earliestWinLevel != -1) {
 					System.out.println("FOUND WINNING MOVE!");
 					System.out.println("size of terminations = " + earliestTerminations.size());
 					if (earliestTerminations.containsKey(selection)) { 
 						System.out.println("Yes, it terminates somewhere.");
 						Termination termination = earliestTerminations.get(selection);
-						System.out.println("will win in " + termination.level + " turns");
-						if (termination.winning) System.out.println("winning move");
+						if (termination.winning)
+							System.out.println("will win in " + termination.level + " turns");
 					}
 					break; 				
 				}
+				
 				if (earliestTerminations.size() == legalMoves.size()) {
 					System.out.println("ALL MOVES LEAD TO NON-WINNING TERMINAL STATES!");
 					break;
 				}
+				
 				// if there are no winning moves, pick the one that loses the slowest
 				// if there are no losing terminations recorded, 'selection' will just be based on scores from minimax
 				/*
@@ -251,7 +253,6 @@ public class CloseGamer extends StateMachineGamer {
 				}
 				*/
 				
-				// TODO how to remember which was the winning move if tracking foundWinning and foundLosing?
 				maxLevel++;
 			}
 		}
@@ -293,7 +294,6 @@ public class CloseGamer extends StateMachineGamer {
 						else
 							heuristicValue++;
 						score = heuristicValue;
-						//score = -score - 1; // TODO how to compare scores if one is always the inverse minus one?
 						//System.out.println("Using heuristic for score " + score);
 					} else {
 						score = getMaxScore(initialMove, nextState, curLevel + 1, maxLevel); // TODO fix this
@@ -348,66 +348,6 @@ public class CloseGamer extends StateMachineGamer {
 			for (Move move : legalMoves) {
 				double score = getMinScore(initialMove, move, currentState, curLevel, maxLevel);
 				maxScore = Math.max(score, maxScore);
-			}
-			return maxScore;
-		}
-		
-		private double getMoveClosestToTerminal(StateMachine stateMachine, MachineState currentState, Role role, int curLevel, int maxLevel, Move nextMove) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
-			MachineState state = currentState;
-			double maxScore = -1;
-			System.out.println(stateMachine.getLegalMoves(state, role).size());
-			if (!stoppedEarly) {
-				for (Move move : stateMachine.getLegalMoves(state, role)) {
-					if (!stoppedEarly) {
-						double minScore = 101;
-						System.out.println(stateMachine.getLegalJointMoves(state, role, move).size());
-						for (List<Move> moveList : stateMachine.getLegalJointMoves(state, role, move)) { 
-							if (!stoppedEarly) {
-								double myScore = 101;
-								System.out.println("CurLevel = " + curLevel);
-								if (curLevel==1) {
-									nextMove = move;
-									System.out.println("NEXT MOVE : " + nextMove.toString());
-								}
-								MachineState nextState = stateMachine.getNextState(state, moveList);
-								if (stateMachine.isTerminal(nextState)) {
-									myScore = stateMachine.getGoal(nextState, role);
-									System.out.println("!! " + myScore + " !!");
-								}
-								else {
-									if (curLevel < maxLevel) {
-										myScore = getMoveClosestToTerminal(stateMachine, nextState, role, curLevel+1, maxLevel, nextMove);
-									}
-									else {
-										myScore = heuristic.eval(stateMachine, state, role)/2;
-									}
-								}
-								if (myScore<minScore || (myScore==minScore && stateMachine.isTerminal(nextState))) {
-									System.out.println("%%% " + moveList.toString());
-									minScore = myScore;
-								}
-								
-							}
-							System.out.println("|||||");
-						}
-						System.out.println("Move: " + move.toString() + ": expected score: " + minScore);
-						if (minScore > maxScore) {
-							maxScore = minScore;
-						}
-						if (minScore > best) {
-							System.out.println("UPDATED SELECTION!");
-							if (selection!=null) System.out.println("old move: " + selection.toString());
-							System.out.println("old score: " + best);
-							best = minScore;
-							selection = nextMove;
-							// TODO note: new selection shouldn't technically ever be null, debug this
-							if (selection != null) {
-								System.out.println("new move: " + selection.toString());
-								System.out.println("new score: " + best);
-							}
-						}
-					}
-				} 
 			}
 			return maxScore;
 		}
