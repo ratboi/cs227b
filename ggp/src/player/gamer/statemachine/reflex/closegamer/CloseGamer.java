@@ -189,6 +189,7 @@ public class CloseGamer extends StateMachineGamer {
 				
 				double maxScore = 0;
 				Move tentativeSelection = null;
+				boolean updatedThisRound = false;
 
 				// find the move that results in the maximum score
 				for (Move move : legalMoves) {
@@ -196,13 +197,14 @@ public class CloseGamer extends StateMachineGamer {
 						System.out.println("Trying move: " + move.toString());
 						double score = getMinScore(move, move, currentState, 1, maxLevel);
 						System.out.println("score = " + score + "\n");
-						if (score >= maxScore) {
+						if (score > maxScore) {
 							maxScore = score;
 							tentativeSelection = move;
+							updatedThisRound = true;
 						}
 					}
 				}
-				if (!stoppedEarly)
+				if (!stoppedEarly && updatedThisRound)
 					selection = tentativeSelection;
 				if (maxScore == 100) {
 					System.out.println("FOUND WINNING MOVE");
@@ -258,6 +260,8 @@ public class CloseGamer extends StateMachineGamer {
 			MachineState chosenNextState = null;
 			boolean choseTerminalState = false;
 			List<Move> chosenMove = null;
+			int chosenDepth = -1;
+			int myDepth = curLevel;
 			for (List<Move> jointMove : jointMoves) {
 				if (!stoppedEarly) {
 					MachineState nextState = stateMachine.getNextState(currentState, jointMove);
@@ -274,7 +278,10 @@ public class CloseGamer extends StateMachineGamer {
 					double score;
 					boolean isTerminal = false;
 					if (terminatingStates.containsKey(nextState)) {
-						score = terminatingStates.get(nextState).score;
+						System.out.println("using cache!");
+						CachedTermination termination = terminatingStates.get(nextState);
+						score = termination.score;
+						myDepth += termination.distanceToTerminal; 
 						isTerminal = true;
 					} else if (stateMachine.isTerminal(nextState)) {
 						score = stateMachine.getGoal(nextState, role);
@@ -293,17 +300,22 @@ public class CloseGamer extends StateMachineGamer {
 					}
 					
 					// update minScore if the current score we're testing is better
-					if (score <= minScore) {
+					if (score < minScore) {
 						minScore = score;
 						chosenNextState = nextState;
 						choseTerminalState = isTerminal;
 						chosenMove = jointMove;
+						chosenDepth = myDepth;
+					}
+					// there are several tie-breakers
+					if (score == minScore) {
+						
 					}
 				}
 			}
 			
 			if (choseTerminalState) {
-				System.out.println("%%%Found Terminal State%%% - score: " + minScore);
+				//System.out.println("%%%Found Terminal State%%% - score: " + minScore);
 				
 				// store in cache if it isn't already in there
 				if (!terminatingStates.containsKey(chosenNextState)) {
@@ -329,7 +341,7 @@ public class CloseGamer extends StateMachineGamer {
 				CachedTermination cachedTermination = new CachedTermination();
 				cachedTermination.score = minScore;
 				cachedTermination.distanceToTerminal = terminatingStates.get(chosenNextState).distanceToTerminal + 1;
-				System.out.println("Reverse Propogating.  Their turn.  Move = " + chosenMove.toString() + " is " + cachedTermination.distanceToTerminal + " steps from " + minScore);
+				//System.out.println("Reverse Propogating.  Their turn.  Move = " + chosenMove.toString() + " is " + cachedTermination.distanceToTerminal + " steps from " + minScore);
 				terminatingStates.put(currentState, cachedTermination);
 			}
 			
@@ -342,7 +354,7 @@ public class CloseGamer extends StateMachineGamer {
 			Move chosenMove = null;
 			for (Move move : legalMoves) {
 				double score = getMinScore(initialMove, move, currentState, curLevel, maxLevel);
-				if (score > maxScore) {
+				if (score >= maxScore) {
 					maxScore = score;
 					chosenMove = move;
 				}
@@ -361,7 +373,7 @@ public class CloseGamer extends StateMachineGamer {
  				CachedTermination cachedTermination = new CachedTermination();
 				cachedTermination.score = maxScore;
 				cachedTermination.distanceToTerminal = terminatingStates.get(nextState).distanceToTerminal + 1;
-				System.out.println("Reverse Propogating.  Our turn.  Move = " + chosenMove.toString() + " is " + cachedTermination.distanceToTerminal + " steps from " + maxScore);
+				//System.out.println("Reverse Propogating.  Our turn.  Move = " + chosenMove.toString() + " is " + cachedTermination.distanceToTerminal + " steps from " + maxScore);
 				terminatingStates.put(currentState, cachedTermination);
  			}
 			
