@@ -338,7 +338,7 @@ public class CloseGamer extends StateMachineGamer {
 		}
 		
 		private double getMaxScore(Move initialMove, MachineState currentState, int curLevel, int maxLevel) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
-			double maxScore = 0;
+			double maxScore = -1;
 			List<Move> legalMoves = stateMachine.getLegalMoves(currentState, role);
 			Move chosenMove = null;
 			for (Move move : legalMoves) {
@@ -373,7 +373,7 @@ public class CloseGamer extends StateMachineGamer {
 
 	@Override
 	public StateMachine getInitialStateMachine() {
-		return new PropNetStateMachine();
+		return new CachedPropNetStateMachine();
 	}
 
 	@Override

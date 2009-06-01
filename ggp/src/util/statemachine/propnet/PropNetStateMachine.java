@@ -282,6 +282,9 @@ public class PropNetStateMachine extends StateMachine
 	
 	private synchronized void setMoves(List<Move> moves) {
 		for (int i = 0; i < moves.size(); i++) {
+			if (roles.get(i) == null || moves.get(i) == null) {
+				System.out.println("ONE OF THESE IS NULL");
+			}
 			GdlTerm doesState = GdlPool.getRelation(GdlPool.getConstant("does"), new GdlTerm[] { roles.get(i).getName().toTerm(), moves.get(i).getContents().toTerm() }).toTerm();
 			propnet.getInputPropositions().get(doesState).setValue(true);
 		}
