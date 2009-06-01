@@ -19,6 +19,7 @@ import player.gamer.statemachine.reflex.openbook.OpenBookGamer.ReverseThread;
 import player.heuristic.Heuristic;
 import player.heuristic.MonteCarloHeuristic;
 import util.statemachine.propnet.CachedPropNetStateMachine;
+import util.statemachine.propnet.PropNetStateMachine;
 import util.statemachine.MachineState;
 import util.statemachine.Move;
 import util.statemachine.Role;
