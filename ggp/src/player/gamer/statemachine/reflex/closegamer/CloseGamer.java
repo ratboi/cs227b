@@ -18,6 +18,7 @@ import player.gamer.statemachine.reflex.openbook.OpenBookGamer.EndBookThread;
 import player.gamer.statemachine.reflex.openbook.OpenBookGamer.ReverseThread;
 import player.heuristic.Heuristic;
 import player.heuristic.MonteCarloHeuristic;
+import util.statemachine.propnet.CachedPropNetStateMachine;
 import util.statemachine.propnet.PropNetStateMachine;
 import util.statemachine.MachineState;
 import util.statemachine.Move;
@@ -349,7 +350,7 @@ public class CloseGamer extends StateMachineGamer {
 		}
 		
 		private double getMaxScore(Move initialMove, MachineState currentState, int curLevel, int maxLevel) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
-			double maxScore = 0;
+			double maxScore = -1;
 			List<Move> legalMoves = stateMachine.getLegalMoves(currentState, role);
 			Move chosenMove = null;
 			for (Move move : legalMoves) {
@@ -363,11 +364,7 @@ public class CloseGamer extends StateMachineGamer {
 			MachineState nextState = null;
 			if (nextMoves.size() == 1) {
 				List<Move> nextMove = nextMoves.get(0);
-				if (nextMove == null) System.out.println("ERROR! no next move");
-				else {
-					if (currentState == null) System.out.println("!!!!!!!!!!!!ERROR! no current state");
-					else nextState = stateMachine.getNextState(currentState, nextMove);
-				}
+				nextState = stateMachine.getNextState(currentState, nextMove);
 			}
  			if (nextState!=null && terminatingStates.containsKey(nextState)) {
  				CachedTermination cachedTermination = new CachedTermination();
@@ -384,7 +381,7 @@ public class CloseGamer extends StateMachineGamer {
 
 	@Override
 	public StateMachine getInitialStateMachine() {
-		return new PropNetStateMachine();
+		return new CachedPropNetStateMachine();
 	}
 
 	@Override

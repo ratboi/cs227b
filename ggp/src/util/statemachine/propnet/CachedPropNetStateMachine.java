@@ -34,7 +34,7 @@ public class CachedPropNetStateMachine extends PropNetStateMachine {
 	
 	public CachedPropNetStateMachine()
 	{
-		ttlCache = new TtlCache<MachineState, Entry>(1);
+		ttlCache = new TtlCache<MachineState, Entry>(5);
 	}
 	
 	private Entry getEntry(MachineState state)
