@@ -191,6 +191,10 @@ public class CloseGamer extends StateMachineGamer {
 				double maxScore = 0;
 				Move tentativeSelection = null;
 				boolean updatedThisRound = false;
+				boolean first = true;
+				boolean firstNonZero = false;
+				boolean secondNonZero = false;
+				boolean allTerminal = true;
 
 				// find the move that results in the maximum score
 				for (Move move : legalMoves) {
@@ -198,11 +202,22 @@ public class CloseGamer extends StateMachineGamer {
 						System.out.println("Trying move: " + move.toString());
 						double score = getMinScore(move, move, currentState, 1, maxLevel);
 						System.out.println("score = " + score + "\n");
+						if (score != 0) {
+							if (firstNonZero) {
+								secondNonZero = true;
+							}
+							firstNonZero = true;
+						}
+						if (score!=100 && score!=50 && score!=0) allTerminal = false;
 						if (score > maxScore) {
 							maxScore = score;
 							tentativeSelection = move;
+							if (!first) updatedThisRound = true;
+						}
+						if (score < maxScore) {
 							updatedThisRound = true;
 						}
+						first = false;
 					}
 				}
 				if (!stoppedEarly && updatedThisRound)
@@ -210,6 +225,11 @@ public class CloseGamer extends StateMachineGamer {
 				if (maxScore == 100) {
 					System.out.println("FOUND WINNING MOVE");
 					break;
+				}
+				if (!stoppedEarly && firstNonZero && !secondNonZero) {
+					System.out.println("TERMINATED EARLY -- MUST BLOCK OPPONENT");
+					break;
+					
 				}
 				// if there's a winning move, pick the one that wins soonest
 				/*int earliestWinLevel = -1;
@@ -225,7 +245,7 @@ public class CloseGamer extends StateMachineGamer {
 				if (selection != null)
 					System.out.println("MOVE = " + selection.toString());
 	
-				if (earliestTerminations.size() == legalMoves.size()) {
+				if (allTerminal) {
 					System.out.println("ALL MOVES LEAD TO NON-WINNING TERMINAL STATES!");
 					break;
 				}
@@ -279,7 +299,7 @@ public class CloseGamer extends StateMachineGamer {
 					double score;
 					boolean isTerminal = false;
 					if (terminatingStates.containsKey(nextState)) {
-						System.out.println("using cache!");
+						System.out.print("!");
 						CachedTermination termination = terminatingStates.get(nextState);
 						score = termination.score;
 						myDepth += termination.distanceToTerminal; 
@@ -301,16 +321,12 @@ public class CloseGamer extends StateMachineGamer {
 					}
 					
 					// update minScore if the current score we're testing is better
-					if (score < minScore) {
+					if (score < minScore || (score == minScore && myDepth < chosenDepth)) {
 						minScore = score;
 						chosenNextState = nextState;
 						choseTerminalState = isTerminal;
 						chosenMove = jointMove;
 						chosenDepth = myDepth;
-					}
-					// there are several tie-breakers
-					if (score == minScore) {
-						
 					}
 				}
 			}
