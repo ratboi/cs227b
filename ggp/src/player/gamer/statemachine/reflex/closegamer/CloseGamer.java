@@ -18,7 +18,7 @@ import player.gamer.statemachine.reflex.openbook.OpenBookGamer.EndBookThread;
 import player.gamer.statemachine.reflex.openbook.OpenBookGamer.ReverseThread;
 import player.heuristic.Heuristic;
 import player.heuristic.MonteCarloHeuristic;
-import util.statemachine.propnet.CachedPropNetStateMachine;
+import util.statemachine.propnet.PropNetStateMachine;
 import util.statemachine.MachineState;
 import util.statemachine.Move;
 import util.statemachine.Role;
@@ -180,9 +180,8 @@ public class CloseGamer extends StateMachineGamer {
 			boolean foundTie = false; // TODO detect tie cases; also: how do we remember which was the winning move if we found a tie?
 			
 			Map<Move, Double> scores = new HashMap<Move, Double>();
+			// iterative deepening - each new iteration of the loop increases max level by one
 			while (!stoppedEarly) {
-				earliestTerminations.clear();
-
 				// debug output
 				System.out.println("NOW SEARCHING FOR A MOVE USING A MAX LEVEL OF " + maxLevel);
 				System.out.println("----------------------------------------------------");
@@ -197,7 +196,7 @@ public class CloseGamer extends StateMachineGamer {
 						System.out.println("Trying move: " + move.toString());
 						double score = getMinScore(move, move, currentState, 1, maxLevel);
 						System.out.println("score = " + score + "\n");
-						if (score > maxScore) {
+						if (score >= maxScore) {
 							maxScore = score;
 							tentativeSelection = move;
 						}
@@ -205,9 +204,12 @@ public class CloseGamer extends StateMachineGamer {
 				}
 				if (!stoppedEarly)
 					selection = tentativeSelection;
-				
+				if (maxScore == 100) {
+					System.out.println("FOUND WINNING MOVE");
+					break;
+				}
 				// if there's a winning move, pick the one that wins soonest
-				int earliestWinLevel = -1;
+				/*int earliestWinLevel = -1;
 				for (Move move : legalMoves) {
 					if (earliestTerminations.containsKey(move)) {
 						Termination termination = earliestTerminations.get(move);
@@ -216,21 +218,10 @@ public class CloseGamer extends StateMachineGamer {
 							selection = move;
 						}
 					}
-				}
+				}*/
 				if (selection != null)
 					System.out.println("MOVE = " + selection.toString());
-				if (earliestWinLevel != -1) {
-					System.out.println("FOUND WINNING MOVE!");
-					System.out.println("size of terminations = " + earliestTerminations.size());
-					if (earliestTerminations.containsKey(selection)) { 
-						System.out.println("Yes, it terminates somewhere.");
-						Termination termination = earliestTerminations.get(selection);
-						if (termination.winning)
-							System.out.println("will win in " + termination.level + " turns");
-					}
-					break; 				
-				}
-				
+	
 				if (earliestTerminations.size() == legalMoves.size()) {
 					System.out.println("ALL MOVES LEAD TO NON-WINNING TERMINAL STATES!");
 					break;
@@ -266,6 +257,7 @@ public class CloseGamer extends StateMachineGamer {
 			List<List<Move> > jointMoves = stateMachine.getLegalJointMoves(currentState, role, latestMove);
 			MachineState chosenNextState = null;
 			boolean choseTerminalState = false;
+			List<Move> chosenMove = null;
 			for (List<Move> jointMove : jointMoves) {
 				if (!stoppedEarly) {
 					MachineState nextState = stateMachine.getNextState(currentState, jointMove);
@@ -305,6 +297,7 @@ public class CloseGamer extends StateMachineGamer {
 						minScore = score;
 						chosenNextState = nextState;
 						choseTerminalState = isTerminal;
+						chosenMove = jointMove;
 					}
 				}
 			}
@@ -330,12 +323,13 @@ public class CloseGamer extends StateMachineGamer {
 				}
 			}
 			
-			
 			// we know chosen next state is terminal, so we should propagate that up to currentState as well
-			if (terminatingStates.containsKey(chosenNextState)) {
+			// we only propagate up if opponent is in control (so it's deterministic to get from previous state to next state)
+			if (terminatingStates.containsKey(chosenNextState) && jointMoves.size() > 1) {
 				CachedTermination cachedTermination = new CachedTermination();
 				cachedTermination.score = minScore;
 				cachedTermination.distanceToTerminal = terminatingStates.get(chosenNextState).distanceToTerminal + 1;
+				System.out.println("Reverse Propogating.  Their turn.  Move = " + chosenMove.toString() + " is " + cachedTermination.distanceToTerminal + " steps from " + minScore);
 				terminatingStates.put(currentState, cachedTermination);
 			}
 			
@@ -345,10 +339,32 @@ public class CloseGamer extends StateMachineGamer {
 		private double getMaxScore(Move initialMove, MachineState currentState, int curLevel, int maxLevel) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 			double maxScore = 0;
 			List<Move> legalMoves = stateMachine.getLegalMoves(currentState, role);
+			Move chosenMove = null;
 			for (Move move : legalMoves) {
 				double score = getMinScore(initialMove, move, currentState, curLevel, maxLevel);
-				maxScore = Math.max(score, maxScore);
+				if (score > maxScore) {
+					maxScore = score;
+					chosenMove = move;
+				}
 			}
+			List <List <Move>> nextMoves = stateMachine.getLegalJointMoves(currentState, role, chosenMove);
+			MachineState nextState = null;
+			if (nextMoves.size() == 1) {
+				List<Move> nextMove = nextMoves.get(0);
+				if (nextMove == null) System.out.println("ERROR! no next move");
+				else {
+					if (currentState == null) System.out.println("!!!!!!!!!!!!ERROR! no current state");
+					else nextState = stateMachine.getNextState(currentState, nextMove);
+				}
+			}
+ 			if (nextState!=null && terminatingStates.containsKey(nextState)) {
+ 				CachedTermination cachedTermination = new CachedTermination();
+				cachedTermination.score = maxScore;
+				cachedTermination.distanceToTerminal = terminatingStates.get(nextState).distanceToTerminal + 1;
+				System.out.println("Reverse Propogating.  Our turn.  Move = " + chosenMove.toString() + " is " + cachedTermination.distanceToTerminal + " steps from " + maxScore);
+				terminatingStates.put(currentState, cachedTermination);
+ 			}
+			
 			return maxScore;
 		}
 		
@@ -356,7 +372,7 @@ public class CloseGamer extends StateMachineGamer {
 
 	@Override
 	public StateMachine getInitialStateMachine() {
-		return new CachedPropNetStateMachine();
+		return new PropNetStateMachine();
 	}
 
 	@Override
