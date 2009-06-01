@@ -352,11 +352,7 @@ public class CloseGamer extends StateMachineGamer {
 			MachineState nextState = null;
 			if (nextMoves.size() == 1) {
 				List<Move> nextMove = nextMoves.get(0);
-				if (nextMove == null) System.out.println("ERROR! no next move");
-				else {
-					if (currentState == null) System.out.println("!!!!!!!!!!!!ERROR! no current state");
-					else nextState = stateMachine.getNextState(currentState, nextMove);
-				}
+				nextState = stateMachine.getNextState(currentState, nextMove);
 			}
  			if (nextState!=null && terminatingStates.containsKey(nextState)) {
  				CachedTermination cachedTermination = new CachedTermination();
