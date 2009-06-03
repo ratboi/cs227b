@@ -37,7 +37,7 @@ public class CloseGamer extends StateMachineGamer {
 	// search-related variables
 	private Heuristic heuristic;
 	private Map<MachineState, CachedTermination> terminatingStates = new HashMap<MachineState, CachedTermination>();
-	private Map<MachineState, Double> stateValues;
+	private Map<MachineState, Double> stateValues = new HashMap<MachineState, Double>();
 	
 	//search termination;
 	private boolean done = false;
@@ -314,8 +314,14 @@ public class CloseGamer extends StateMachineGamer {
 						score = stateMachine.getGoal(nextState, role);
 						isTerminal = true;
 					} else if (curLevel == maxLevel) {
-						score = heuristic.eval(stateMachine, nextState, role, gamer) / 2;
-						if (score < 0) score++;
+						if (stateValues.containsKey(nextState)) {
+							score = stateValues.get(nextState);
+						}
+						else {
+							score = heuristic.eval(stateMachine, nextState, role, gamer) / 2;
+							if (score < 0) score++;
+							stateValues.put(nextState, score);
+						}
 						//System.out.println("Using heuristic for score " + score);
 					} else {
 						score = getMaxScore(initialMove, nextState, curLevel + 1, maxLevel); // TODO fix this
