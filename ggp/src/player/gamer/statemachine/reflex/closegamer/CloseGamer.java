@@ -57,7 +57,7 @@ public class CloseGamer extends StateMachineGamer {
 		heuristic = new MonteCarloHeuristic();
 		stateValues = new HashMap<MachineState, Double>();
 		
-		EndBookThread endBookThread = new EndBookThread(getStateMachine(), getCurrentState(), getRole(), timeout);
+		EndBookThread endBookThread = new EndBookThread(getStateMachine(), getCurrentState(), getRole(), timeout, this);
 		endBookThread.start();
 		
 		while (System.currentTimeMillis() < timeout - BUFFER_TIME) {
@@ -417,14 +417,16 @@ public class CloseGamer extends StateMachineGamer {
 		StateMachine machine;
 		MachineState startState;
 		Role role;
+		StateMachineGamer gamer;
 		private long timeout;
 		private final long BUFFER = 1000;
 
-		public EndBookThread(StateMachine machine, MachineState startState, Role role, long timeout) throws MoveDefinitionException, TransitionDefinitionException {
+		public EndBookThread(StateMachine machine, MachineState startState, Role role, long timeout, StateMachineGamer gamer) throws MoveDefinitionException, TransitionDefinitionException {
 			this.startState = startState;
 			this.timeout = timeout;
 			this.machine = machine;
 			this.role = role;
+			this.gamer = gamer;
 		}
 
 		public void run() {
@@ -445,7 +447,7 @@ public class CloseGamer extends StateMachineGamer {
 					}
 
 					if (terminals.add(state)) {
-						Thread workBackwards = new ReverseThread(machine, twoStatesEarlier, role, timeout);
+						Thread workBackwards = new ReverseThread(machine, twoStatesEarlier, role, timeout, gamer);
 						workBackwards.start();
 
 						int value = machine.getGoal(state, role);
@@ -471,14 +473,16 @@ public class CloseGamer extends StateMachineGamer {
 		StateMachine machine;
 		MachineState startState;
 		Role role;
+		StateMachineGamer gamer;
 		private long timeout;
 		private final long BUFFER = 1000;
 
-		public ReverseThread(StateMachine machine, MachineState startState, Role role, long timeout) throws MoveDefinitionException, TransitionDefinitionException {
+		public ReverseThread(StateMachine machine, MachineState startState, Role role, long timeout, StateMachineGamer gamer) throws MoveDefinitionException, TransitionDefinitionException {
 			this.startState = startState;
 			this.timeout = timeout;
 			this.machine = machine;
 			this.role = role;
+			this.gamer = gamer;
 		}
 		
 		private double getMinScore(Move initialMove, Move latestMove, MachineState currentState, int curLevel, int maxLevel) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
@@ -517,7 +521,7 @@ public class CloseGamer extends StateMachineGamer {
 						score = machine.getGoal(nextState, role);
 						isTerminal = true;
 					} else if (curLevel == maxLevel) {
-						double heuristicValue = heuristic.eval(machine, nextState, role) / 2;
+						double heuristicValue = heuristic.eval(machine, nextState, role, gamer) / 2;
 						if (heuristicValue >= 25)
 							heuristicValue--;
 						else
