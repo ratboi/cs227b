@@ -61,6 +61,9 @@ public class CloseGamer extends StateMachineGamer {
 		terminatingStates = new HashMap<MachineState, CachedTermination>();
 		foundMove = false;
 		stoppedEarly = false;
+		DepthCharges = 3;
+		maxGoalValue = -1;
+		minGoalValue = 101;
 		
 		EndBookThread endBookThread = new EndBookThread(getStateMachine(), getCurrentState(), getRole(), timeout, this);
 		endBookThread.start();
