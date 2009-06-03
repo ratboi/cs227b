@@ -13,7 +13,7 @@ import player.gamer.statemachine.StateMachineGamer;
 
 public class MonteCarloHeuristic implements Heuristic {
 
-	public int numCharges = 1;
+	public int numCharges = 3;
 	
 	public MonteCarloHeuristic() {}
 	
@@ -24,19 +24,22 @@ public class MonteCarloHeuristic implements Heuristic {
 	public double eval(StateMachine stateMachine, MachineState state, Role role, StateMachineGamer gamer)
 			throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 		double runningTotal = 0.0;
+		double depth = 0.0;
 		
 		for (int i = 0; i < numCharges; i++) {
 			if (gamer.isStopped()) break;
 			MachineState currState = state;
-			int count = 0;
 			while (!stateMachine.isTerminal(currState) && !gamer.isStopped()) {
-				count++;
-				System.out.print("!");
+				depth++;
 				currState = stateMachine.getRandomNextState(currState);
 			}
 			runningTotal += stateMachine.getGoal(currState, role);
 		}
-		return runningTotal / numCharges;
+		runningTotal /= numCharges;
+		depth = 1 / (depth / numCharges);
+		if (runningTotal >= 50) runningTotal += depth;
+		else runningTotal -= depth;
+		return runningTotal;
 	}
 
 }

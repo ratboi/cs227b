@@ -314,12 +314,8 @@ public class CloseGamer extends StateMachineGamer {
 						score = stateMachine.getGoal(nextState, role);
 						isTerminal = true;
 					} else if (curLevel == maxLevel) {
-						double heuristicValue = heuristic.eval(stateMachine, nextState, role, gamer) / 2;
-						if (heuristicValue >= 25)
-							heuristicValue--;
-						else
-							heuristicValue++;
-						score = heuristicValue;
+						score = heuristic.eval(stateMachine, nextState, role, gamer) / 2;
+						if (score < 0) score++;
 						//System.out.println("Using heuristic for score " + score);
 					} else {
 						score = getMaxScore(initialMove, nextState, curLevel + 1, maxLevel); // TODO fix this
