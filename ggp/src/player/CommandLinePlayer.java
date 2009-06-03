@@ -89,7 +89,6 @@ public class CommandLinePlayer implements Observer {
 		player.start();	
 	}
 
-	@Override
 	public void observe(Event event) {
 		if (event instanceof PlayerReceivedMessageEvent)
 		{
