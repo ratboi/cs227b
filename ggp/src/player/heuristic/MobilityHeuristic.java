@@ -1,6 +1,7 @@
 package player.heuristic;
 
 import java.util.List;
+import player.gamer.statemachine.StateMachineGamer;
 
 import util.statemachine.MachineState;
 import util.statemachine.Move;
@@ -15,7 +16,7 @@ public class MobilityHeuristic implements Heuristic {
 	public double maxMobility = 0.0;
 	private static int NUM_CHARGES = 10;
 	
-	public double eval(StateMachine stateMachine, MachineState state, Role role) throws MoveDefinitionException {
+	public double eval(StateMachine stateMachine, MachineState state, Role role, StateMachineGamer gamer) throws MoveDefinitionException {
 		double numMoves = (double) stateMachine.getLegalMoves(state, role).size();
 		maxMobility = Math.max(numMoves, maxMobility);
 		return numMoves / maxMobility * MAX_SCORE;

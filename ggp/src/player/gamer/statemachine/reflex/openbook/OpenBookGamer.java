@@ -60,7 +60,7 @@ public class OpenBookGamer extends StateMachineGamer {
 		stateValues = new HashMap<MachineState, Double>();
 		
 		
-		OpenBookThread openBookThread = new OpenBookThread(getStateMachine(), getCurrentState(), getRole(), timeout);
+		OpenBookThread openBookThread = new OpenBookThread(getStateMachine(), getCurrentState(), getRole(), timeout, this);
 		openBookThread.start();
 		EndBookThread endBookThread = new EndBookThread(getStateMachine(), getCurrentState(), getRole(), timeout);
 		//endBookThread.start();
@@ -78,12 +78,14 @@ public class OpenBookGamer extends StateMachineGamer {
 		private long timeout;
 		private final long BUFFER = 1000;
 		private Heuristic heuristic = new MonteCarloHeuristic(5);
+		private StateMachineGamer gamer;
 		
-		public OpenBookThread(StateMachine machine, MachineState startState, Role role, long timeout) throws MoveDefinitionException, TransitionDefinitionException {
+		public OpenBookThread(StateMachine machine, MachineState startState, Role role, long timeout, StateMachineGamer gamer) throws MoveDefinitionException, TransitionDefinitionException {
 			this.machine = machine;
 			this.startState = startState;
 			this.role = role;
 			this.timeout = timeout;
+			this.gamer = gamer;
 			MobilityHeuristic mobilityHeuristic = new MobilityHeuristic();
 			OpponentFocusHeuristic opponentFocusHeuristic = new OpponentFocusHeuristic();
 			mobilityHeuristic.setMaxMobility(getStateMachine(), getCurrentState(), getRole(), MAX_LEVEL);
@@ -115,7 +117,7 @@ public class OpenBookGamer extends StateMachineGamer {
 			if (System.currentTimeMillis() > timeout - BUFFER)
 				return -1.0;
 			if (level == maxLevel) {
-				double heuristicScore = heuristic.eval(machine, state, role);
+				double heuristicScore = heuristic.eval(machine, state, role, gamer);
 				return heuristicScore;
 			}
 			double maxScore = findBestMove(state, role, level + 1, maxLevel);
@@ -314,7 +316,7 @@ public class OpenBookGamer extends StateMachineGamer {
 			move = new FindMoveThread(getStateMachine(), getCurrentState(), getRole());
 			move.start();
 		}*/
-		move = new FindMoveThread(getStateMachine(), getCurrentState(), getRole());
+		move = new FindMoveThread(getStateMachine(), getCurrentState(), getRole(), this);
 		move.start();
 
 		while (!foundMove) {
@@ -347,11 +349,13 @@ public class OpenBookGamer extends StateMachineGamer {
 		private StateMachine stateMachine;
 		private MachineState currentState;
 		private Role role;
+		private StateMachineGamer gamer;
 		private int maxLevel = 1;
 		//private boolean stoppedEarly = false;
 		
-		public FindMoveThread(StateMachine stateMachine, MachineState state, Role role) {
+		public FindMoveThread(StateMachine stateMachine, MachineState state, Role role, StateMachineGamer gamer) {
 			this.stateMachine = stateMachine;
+			this.gamer = gamer;
 			this.currentState = state;
 			this.role = role;
 		}
@@ -444,7 +448,7 @@ public class OpenBookGamer extends StateMachineGamer {
 				return endBook.get(state);
 			}
 			if (level == maxLevel) {
-				double heuristicScore = heuristic.eval(stateMachine, state, role);
+				double heuristicScore = heuristic.eval(stateMachine, state, role, gamer);
 				return heuristicScore;
 			}
 			double minScore = 101;
@@ -466,7 +470,7 @@ public class OpenBookGamer extends StateMachineGamer {
 				return endBook.get(state);
 			}
 			if (level == maxLevel) {
-				double heuristicScore = heuristic.eval(stateMachine, state, role);
+				double heuristicScore = heuristic.eval(stateMachine, state, role, gamer);
 				return heuristicScore;
 			}
 			double maxScore = -1.0;

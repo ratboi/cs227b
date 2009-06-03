@@ -219,6 +219,7 @@ public class PropNetStateMachine extends StateMachine
 		if (numTrueGoalProps != 1) {
 			System.out.println("there are " + numTrueGoalProps + " true goal props instead of just 1");
 			//throw new GoalDefinitionException(state, role);
+			return 0;
 		}
 		GdlTerm value = goalProp.getName().toSentence().get(1);
 		try {

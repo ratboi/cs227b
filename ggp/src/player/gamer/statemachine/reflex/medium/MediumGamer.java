@@ -153,7 +153,9 @@ public class MediumGamer extends StateMachineGamer {
 		if (machine.isTerminal(state))
 			return machine.getGoal(state, role);
 		if (level > MAX_LEVEL) {
-			double heuristicScore = heuristic.eval(machine, state, role);
+			
+			// COMMENTED OUT HEURISTIC SCORING FUNCTION -- I ASSUME THIS IS NOT USED
+			double heuristicScore = 0; //heuristic.eval(machine, state, role);
 			//System.out.println("heuristic score " + heuristicScore);
 			return heuristicScore;
 		}
