@@ -56,6 +56,15 @@ public class PropNetStateMachine extends StateMachine
 		//propnet = propnets.get(0);
 		//System.out.println(propnets.get(0).toString());
 		//System.out.println(propnet.toString());
+		
+		//create transitions list
+		transitions = new ArrayList<Component>();
+		for (Component comp : propnet.getComponents()) {
+			if (comp instanceof Transition && !transitions.contains(comp)) {
+				transitions.add(comp);
+			}
+		}
+		
 		roles = computeRoles(description);
 		System.out.println("printing roles");
 		for (Role role : roles)
@@ -172,16 +181,14 @@ public class PropNetStateMachine extends StateMachine
 			}
 		}
 		if (clearOld) {
-			transitions = new ArrayList<Component>();
-			for (Component comp : propnet.getComponents()) {
-				if (comp.getValue()) {
-					if (comp instanceof Transition && !transitions.contains(comp)) {
-						transitions.add(comp);
-					}
+			List<Component> trueTransitions = new ArrayList<Component>();
+			for (Component transition : transitions) {
+				if (transition.getValue()) {
+					trueTransitions.add(transition);
 				}
 			}
 			clearValues();
-			for (Component transition : transitions) {
+			for (Component transition : trueTransitions) {
 				for (Component comp : transition.getOutputs()) {
 					if (comp instanceof Proposition) {
 						//System.out.println("CLEAROLD: " + comp + " set to true.");
