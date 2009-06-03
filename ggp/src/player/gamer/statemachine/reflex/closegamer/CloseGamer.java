@@ -482,7 +482,6 @@ public class CloseGamer extends StateMachineGamer {
 			List<List<Move> > jointMoves = machine.getLegalJointMoves(currentState, role, latestMove);
 			MachineState chosenNextState = null;
 			boolean choseTerminalState = false;
-			List<Move> chosenMove = null;
 			int chosenDepth = -1;
 			int myDepth = curLevel;
 			for (List<Move> jointMove : jointMoves) {
@@ -527,7 +526,6 @@ public class CloseGamer extends StateMachineGamer {
 						minScore = score;
 						chosenNextState = nextState;
 						choseTerminalState = isTerminal;
-						chosenMove = jointMove;
 						chosenDepth = myDepth;
 					}
 				}
@@ -588,9 +586,8 @@ public class CloseGamer extends StateMachineGamer {
 			return maxScore;
 		}
 		
-		private double findBestMove(MachineState state, Role role, List<MachineState> viewed) {
+		private double findBestMove(MachineState state, Role role) {
 			double maxScore = -1.0;
-			viewed.add(state);
 			try {
 				//System.out.println("States found? " + viewed.size());
 				// find and cache best move for the current state
@@ -613,8 +610,7 @@ public class CloseGamer extends StateMachineGamer {
 		
 		public void run() {
 			//\System.out.println("ReverseThread started!");
-			List<MachineState> leadsToTerminal = new ArrayList<MachineState>();
-			double terminalValue = findBestMove(startState, role, leadsToTerminal);
+			double terminalValue = findBestMove(startState, role);
 			if (System.currentTimeMillis() < timeout - BUFFER) {
 				endBook.put(startState, terminalValue);
 				//for (MachineState m : leadsToTerminal) {
