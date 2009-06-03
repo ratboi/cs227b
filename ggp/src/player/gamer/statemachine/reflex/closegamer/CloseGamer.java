@@ -59,9 +59,9 @@ public class CloseGamer extends StateMachineGamer {
 		stateValues = new HashMap<MachineState, Double>();
 		
 		EndBookThread endBookThread = new EndBookThread(getStateMachine(), getCurrentState(), getRole(), timeout);
-		//endBookThread.start();
+		endBookThread.start();
 		
-		while (System.currentTimeMillis() < timeout) {
+		while (System.currentTimeMillis() < timeout - BUFFER_TIME) {
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e1) {
@@ -272,10 +272,10 @@ public class CloseGamer extends StateMachineGamer {
 		}
 		
 		private double getMinScore(Move initialMove, Move latestMove, MachineState currentState, int curLevel, int maxLevel) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
-			if (endBook.containsKey(currentState)) {
+			/*if (endBook.containsKey(currentState)) {
 				System.out.println("Found a terminal state with end book!");
 				return endBook.get(currentState);
-			}
+			}*/
 			double minScore = 101;
 			List<List<Move> > jointMoves = stateMachine.getLegalJointMoves(currentState, role, latestMove);
 			MachineState chosenNextState = null;
@@ -437,7 +437,7 @@ public class CloseGamer extends StateMachineGamer {
 					}
 
 					if (terminals.add(state)) {
-						Thread workBackwards = new ReverseThread(machine, lastState, role, timeout);
+						Thread workBackwards = new ReverseThread(machine, twoStatesEarlier, role, timeout);
 						workBackwards.start();
 
 						int value = machine.getGoal(state, role);
@@ -472,29 +472,118 @@ public class CloseGamer extends StateMachineGamer {
 			this.role = role;
 		}
 		
-		private double getMinScore(MachineState state, Role role, Move move, List<MachineState> viewed) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+		private double getMinScore(Move initialMove, Move latestMove, MachineState currentState, int curLevel, int maxLevel) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+			/*if (endBook.containsKey(currentState)) {
+				System.out.println("Found a terminal state with end book!");
+				return endBook.get(currentState);
+			}*/
 			double minScore = 101;
-			MachineState trueNextState = null;
-			for (List<Move> jointMove : machine.getLegalJointMoves(state, role, move)) {
-				if (System.currentTimeMillis() > timeout - BUFFER)
-					break;
-				MachineState nextState = machine.getNextState(state, jointMove);
-				double score = getMaxScore(nextState, role, viewed);
-				if (score < minScore) {
-					minScore = score;
-					trueNextState = nextState;
+			List<List<Move> > jointMoves = machine.getLegalJointMoves(currentState, role, latestMove);
+			MachineState chosenNextState = null;
+			boolean choseTerminalState = false;
+			List<Move> chosenMove = null;
+			int chosenDepth = -1;
+			int myDepth = curLevel;
+			for (List<Move> jointMove : jointMoves) {
+				if (System.currentTimeMillis() < timeout - BUFFER) {
+					MachineState nextState = machine.getNextState(currentState, jointMove);
+					
+					// debug output
+//					for (int i = 0; i < curLevel; i++)
+//						System.out.print("\t");
+//					System.out.println("Trying joint move: " + jointMove.toString());
+//					for (int i = 0; i < curLevel; i++)
+//						System.out.print("\t");
+//					System.out.println("Got this state: " + nextState.toString());
+					
+					// figure out a score for the nextState we're testing
+					double score;
+					boolean isTerminal = false;
+					if (terminatingStates.containsKey(nextState)) {
+						System.out.print("@");
+						CachedTermination termination = terminatingStates.get(nextState);
+						score = termination.score;
+						myDepth += termination.distanceToTerminal; 
+						isTerminal = true;
+					} else if (machine.isTerminal(nextState)) {
+						score = machine.getGoal(nextState, role);
+						isTerminal = true;
+					} else if (curLevel == maxLevel) {
+						double heuristicValue = heuristic.eval(machine, nextState, role) / 2;
+						if (heuristicValue >= 25)
+							heuristicValue--;
+						else
+							heuristicValue++;
+						score = heuristicValue;
+						//System.out.println("Using heuristic for score " + score);
+					} else {
+						score = getMaxScore(initialMove, nextState, curLevel + 1, maxLevel); // TODO fix this
+						//System.out.println("Recursing to level " + (curLevel + 1));
+					}
+					
+					// update minScore if the current score we're testing is better
+					if (score < minScore || (score == minScore && myDepth < chosenDepth)) {
+						minScore = score;
+						chosenNextState = nextState;
+						choseTerminalState = isTerminal;
+						chosenMove = jointMove;
+						chosenDepth = myDepth;
+					}
 				}
 			}
-			//viewed.add(trueNextState);
+			
+			if (choseTerminalState) {
+				//System.out.println("%%%Found Terminal State%%% - score: " + minScore);
+				
+				// store in cache if it isn't already in there
+				if (!terminatingStates.containsKey(chosenNextState)) {
+					//add chosen next state
+					CachedTermination cachedNext = new CachedTermination();
+					cachedNext.score = minScore;
+					cachedNext.distanceToTerminal = 0;
+					terminatingStates.put(chosenNextState, cachedNext);
+				}
+				
+			}
+			
+			// we know chosen next state is terminal, so we should propagate that up to currentState as well
+			// we only propagate up if opponent is in control (so it's deterministic to get from previous state to next state)
+			if (terminatingStates.containsKey(chosenNextState) && jointMoves.size() > 1) {
+				CachedTermination cachedTermination = new CachedTermination();
+				cachedTermination.score = minScore;
+				cachedTermination.distanceToTerminal = terminatingStates.get(chosenNextState).distanceToTerminal + 1;
+				//System.out.println("Reverse Propogating.  Their turn.  Move = " + chosenMove.toString() + " is " + cachedTermination.distanceToTerminal + " steps from " + minScore);
+				terminatingStates.put(currentState, cachedTermination);
+			}
+			
 			return minScore;
 		}
 		
-		private double getMaxScore(MachineState state, Role role, List<MachineState> viewed) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
-			if (machine.isTerminal(state))
-				return machine.getGoal(state, role);
-			if (System.currentTimeMillis() > timeout - BUFFER)
-				return -1.0;
-			double maxScore = findBestMove(state, role, viewed);
+		private double getMaxScore(Move initialMove, MachineState currentState, int curLevel, int maxLevel) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+			double maxScore = -1;
+			List<Move> legalMoves = machine.getLegalMoves(currentState, role);
+			Move chosenMove = null;
+			for (Move move : legalMoves) {
+				double score = getMinScore(initialMove, move, currentState, curLevel, maxLevel);
+				if (score >= maxScore) {
+					maxScore = score;
+					chosenMove = move;
+				}
+			}
+			List <List <Move>> nextMoves = machine.getLegalJointMoves(currentState, role, chosenMove);
+			MachineState nextState = null;
+			if (nextMoves.size() == 1) {
+				List<Move> nextMove = nextMoves.get(0);
+				nextState = machine.getNextState(currentState, nextMove);
+			}
+ 			if (nextState!=null && terminatingStates.containsKey(nextState)) {
+ 				CachedTermination cachedTermination = new CachedTermination();
+				cachedTermination.score = maxScore;
+				cachedTermination.distanceToTerminal = terminatingStates.get(nextState).distanceToTerminal + 1;
+				//System.out.println("Reverse Propogating.  Our turn.  Move = " + chosenMove.toString() + " is " + cachedTermination.distanceToTerminal + " steps from " + maxScore);
+				terminatingStates.put(currentState, cachedTermination);
+ 			}
+			
 			return maxScore;
 		}
 		
@@ -508,7 +597,7 @@ public class CloseGamer extends StateMachineGamer {
 				for (Move move : machine.getLegalMoves(state, role)) {
 					if (System.currentTimeMillis() > timeout - BUFFER)
 						break;
-					double score = getMinScore(state, role, move, viewed);
+					double score = getMinScore(move, move, state, 1, 10);
 					if (score > maxScore) {
 						maxScore = score;
 			//			bestMove = move;
