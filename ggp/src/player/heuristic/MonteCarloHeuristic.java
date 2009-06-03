@@ -14,6 +14,7 @@ import player.gamer.statemachine.StateMachineGamer;
 public class MonteCarloHeuristic implements Heuristic {
 
 	public int numCharges = 3;
+	public double delta = 0.000001;
 	
 	public MonteCarloHeuristic() {}
 	
@@ -39,6 +40,7 @@ public class MonteCarloHeuristic implements Heuristic {
 		depth = 1 / (depth / numCharges);
 		if (runningTotal >= 50) runningTotal += depth;
 		else runningTotal -= depth;
+		if (runningTotal==(int)runningTotal) runningTotal += delta;
 		return runningTotal;
 	}
 

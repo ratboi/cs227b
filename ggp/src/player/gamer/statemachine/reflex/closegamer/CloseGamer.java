@@ -214,7 +214,7 @@ public class CloseGamer extends StateMachineGamer {
 							}
 							firstNonZero = true;
 						}
-						if (score!=100 && score!=50 && score!=0) allTerminal = false;
+						if (score!=(int)score) allTerminal = false;
 						if (score > maxScore) {
 							maxScore = score;
 							tentativeSelection = move;
@@ -316,11 +316,13 @@ public class CloseGamer extends StateMachineGamer {
 					} else if (curLevel == maxLevel) {
 						if (stateValues.containsKey(nextState)) {
 							score = stateValues.get(nextState);
+							System.out.print("$");
 						}
 						else {
 							score = heuristic.eval(stateMachine, nextState, role, gamer) / 2;
 							if (score < 0) score++;
-							stateValues.put(nextState, score);
+							//only cache if exploring a subsequent level
+							if (curLevel > 1) stateValues.put(nextState, score);
 						}
 						//System.out.println("Using heuristic for score " + score);
 					} else {
