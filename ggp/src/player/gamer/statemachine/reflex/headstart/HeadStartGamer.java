@@ -51,7 +51,7 @@ public class HeadStartGamer extends StateMachineGamer {
 		heuristic = new MonteCarloHeuristic();
 		stateValues = new HashMap<MachineState, Double>();
 		
-		move = new FindMoveThread(getStateMachine(), getCurrentState(), getRole());
+		move = new FindMoveThread(getStateMachine(), getCurrentState(), getRole(), this);
 		move.start();
 	}
 
@@ -73,7 +73,7 @@ public class HeadStartGamer extends StateMachineGamer {
 		
 		if (!move.isAlive()) {
 			System.out.println("NOTALIVE");
-			move = new FindMoveThread(getStateMachine(), getCurrentState(), getRole());
+			move = new FindMoveThread(getStateMachine(), getCurrentState(), getRole(), this);
 			move.start();
 		}
 		
@@ -99,6 +99,7 @@ public class HeadStartGamer extends StateMachineGamer {
 	
 	public class FindMoveThread extends Thread {
 		private Move selection;
+		private StateMachineGamer gamer;
 		private List<Move> legalMoves;
 		private StateMachine stateMachine;
 		private MachineState currentState;
@@ -106,9 +107,10 @@ public class HeadStartGamer extends StateMachineGamer {
 		private int maxLevel = 1;
 		//private boolean stoppedEarly = false;
 		
-		public FindMoveThread(StateMachine stateMachine, MachineState state, Role role) {
+		public FindMoveThread(StateMachine stateMachine, MachineState state, Role role, StateMachineGamer gamer) {
 			this.stateMachine = stateMachine;
 			this.currentState = state;
+			this.gamer = gamer;
 			this.role = role;
 		}
 		
@@ -210,7 +212,7 @@ public class HeadStartGamer extends StateMachineGamer {
 			if (machine.isTerminal(state))
 				return machine.getGoal(state, role);
 			if (level > maxLevel) {
-				double heuristicScore = heuristic.eval(machine, state, role);
+				double heuristicScore = heuristic.eval(machine, state, role, gamer);
 				//System.out.println("heuristic score " + heuristicScore);
 				return heuristicScore;
 			}

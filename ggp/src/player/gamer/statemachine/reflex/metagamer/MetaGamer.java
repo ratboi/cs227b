@@ -93,6 +93,7 @@ public class MetaGamer extends StateMachineGamer {
 	public class FindMoveThread extends Thread {
 		private Move selection;
 		private List<Move> legalMoves;
+		private StateMachineGamer gamer;
 		private int maxLevel = 1;
 		
 		public Move getSelection() {
@@ -165,7 +166,7 @@ public class MetaGamer extends StateMachineGamer {
 			if (machine.isTerminal(state))
 				return machine.getGoal(state, role);
 			if (level > maxLevel) {
-				double heuristicScore = heuristic.eval(machine, state, role);
+				double heuristicScore = heuristic.eval(machine, state, role, gamer);
 				//System.out.println("heuristic score " + heuristicScore);
 				return heuristicScore;
 			}

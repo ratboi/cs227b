@@ -21,6 +21,10 @@ public abstract class StateMachineGamer extends Gamer
 	private MachineState currentState;
 	private Role role;
 	private StateMachine stateMachine;
+	
+	public boolean isStopped() {
+		return false;
+	}
 
 	public MachineState getCurrentState()
 	{

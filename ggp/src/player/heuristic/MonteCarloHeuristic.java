@@ -9,10 +9,11 @@ import util.statemachine.StateMachine;
 import util.statemachine.exceptions.MoveDefinitionException;
 import util.statemachine.exceptions.TransitionDefinitionException;
 import util.statemachine.exceptions.GoalDefinitionException;
+import player.gamer.statemachine.StateMachineGamer;
 
 public class MonteCarloHeuristic implements Heuristic {
 
-	public int numCharges = 3;
+	public int numCharges = 1;
 	
 	public MonteCarloHeuristic() {}
 	
@@ -20,13 +21,17 @@ public class MonteCarloHeuristic implements Heuristic {
 		this.numCharges = numCharges;
 	}
 	
-	public double eval(StateMachine stateMachine, MachineState state, Role role)
+	public double eval(StateMachine stateMachine, MachineState state, Role role, StateMachineGamer gamer)
 			throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
 		double runningTotal = 0.0;
 		
 		for (int i = 0; i < numCharges; i++) {
+			if (gamer.isStopped()) break;
 			MachineState currState = state;
-			while (!stateMachine.isTerminal(currState)) {
+			int count = 0;
+			while (!stateMachine.isTerminal(currState) && !gamer.isStopped()) {
+				count++;
+				System.out.print("!");
 				currState = stateMachine.getRandomNextState(currState);
 			}
 			runningTotal += stateMachine.getGoal(currState, role);

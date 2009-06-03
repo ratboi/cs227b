@@ -1,6 +1,7 @@
 package player.heuristic;
 
 import util.statemachine.MachineState;
+import player.gamer.statemachine.StateMachineGamer;
 import util.statemachine.Role;
 import util.statemachine.StateMachine;
 import util.statemachine.exceptions.MoveDefinitionException;
@@ -11,7 +12,7 @@ public class OpponentMobilityHeuristic implements Heuristic {
 	public double maxMobility = 0.0;
 	private static int NUM_CHARGES = 10;
 	
-	public double eval(StateMachine stateMachine, MachineState state, Role role)
+	public double eval(StateMachine stateMachine, MachineState state, Role role, StateMachineGamer gamer)
 			throws MoveDefinitionException {
 		int numTotalJointMoves = stateMachine.getLegalJointMoves(state).size();
 		int numYourMoves = stateMachine.getLegalMoves(state, role).size();

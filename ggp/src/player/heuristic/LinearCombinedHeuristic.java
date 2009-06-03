@@ -1,6 +1,7 @@
 package player.heuristic;
 
 import util.statemachine.MachineState;
+import player.gamer.statemachine.StateMachineGamer;
 import util.statemachine.Role;
 import util.statemachine.StateMachine;
 import util.statemachine.exceptions.GoalDefinitionException;
@@ -19,12 +20,12 @@ public class LinearCombinedHeuristic implements Heuristic {
 		this.weights = weights;
 	}
 	
-	public double eval(StateMachine stateMachine, MachineState state, Role role)
+	public double eval(StateMachine stateMachine, MachineState state, Role role, StateMachineGamer gamer)
 			throws MoveDefinitionException, TransitionDefinitionException,
 			GoalDefinitionException {
 		double totalScore = 0.0;
 		for (int i = 0; i < heuristics.size(); i++) {
-			totalScore += weights.get(i) * heuristics.get(i).eval(stateMachine, state, role);
+			totalScore += weights.get(i) * heuristics.get(i).eval(stateMachine, state, role, gamer);
 		}
 		return totalScore;
 	}

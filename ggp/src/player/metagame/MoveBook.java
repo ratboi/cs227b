@@ -49,7 +49,8 @@ public class MoveBook {
 		if (System.currentTimeMillis() > timeout - BUFFER)
 			return -1.0;
 		if (level == maxLevel) {
-			double heuristicScore = heuristic.eval(machine, state, role);
+			// COMMENTED OUT HEURISTIC SCORING FUNCTION -- I ASSUME THIS IS NOT USED
+			double heuristicScore = 0; //heuristic.eval(machine, state, role);
 			return heuristicScore;
 		}
 		double maxScore = findBestMove(state, role, heuristic, level + 1, maxLevel, timeout);

@@ -51,7 +51,6 @@ public class CloseGamer extends StateMachineGamer {
 	public double minGoalValue = 101;
 	private Map<MachineState, Double> endBook = new HashMap<MachineState, Double>();
 	
-	
 	@Override
 	public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		System.out.println("START - " + System.currentTimeMillis());
@@ -69,13 +68,18 @@ public class CloseGamer extends StateMachineGamer {
 			}
 		}
 	}
+	
+	@Override
+	public boolean isStopped() {
+		return stoppedEarly;
+	}
 
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		long start = System.currentTimeMillis();
 		best = -1;
 		
-		FindMoveThread finder = new FindMoveThread(getStateMachine(), getCurrentState(), getRole());
+		FindMoveThread finder = new FindMoveThread(getStateMachine(), getCurrentState(), getRole(), this);
 		finder.start();
 		ActionListener taskPerformer = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -112,9 +116,10 @@ public class CloseGamer extends StateMachineGamer {
 		int distanceToTerminal;
 	}
 	
-	private class FindMoveThread extends Thread {
+	public class FindMoveThread extends Thread {
 		
 		private StateMachine stateMachine;
+		private StateMachineGamer gamer;
 		private MachineState currentState;
 		private Role role;
 		private List<Move> legalMoves;
@@ -126,10 +131,11 @@ public class CloseGamer extends StateMachineGamer {
 			protected int level;
 		}
 		
-		public FindMoveThread(StateMachine stateMachine, MachineState state, Role role) {
+		public FindMoveThread(StateMachine stateMachine, MachineState state, Role role, StateMachineGamer gamer) {
 			this.stateMachine = stateMachine;
 			this.currentState = state;
 			this.role = role;
+			this.gamer = gamer;
 			earliestTerminations = new HashMap<Move, Termination>();
 		}
 		
@@ -220,7 +226,7 @@ public class CloseGamer extends StateMachineGamer {
 						first = false;
 					}
 				}
-				if (!stoppedEarly && updatedThisRound)
+				if ((!stoppedEarly && updatedThisRound) || maxLevel==1)
 					selection = tentativeSelection;
 				if (maxScore == 100) {
 					System.out.println("FOUND WINNING MOVE");
@@ -308,7 +314,7 @@ public class CloseGamer extends StateMachineGamer {
 						score = stateMachine.getGoal(nextState, role);
 						isTerminal = true;
 					} else if (curLevel == maxLevel) {
-						double heuristicValue = heuristic.eval(stateMachine, nextState, role) / 2;
+						double heuristicValue = heuristic.eval(stateMachine, nextState, role, gamer) / 2;
 						if (heuristicValue >= 25)
 							heuristicValue--;
 						else
