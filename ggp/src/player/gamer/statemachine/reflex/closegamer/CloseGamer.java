@@ -454,6 +454,7 @@ public class CloseGamer extends StateMachineGamer {
 			}
 			catch (Exception e) {
 				System.err.println("Exception in endbook depth charge.");
+				e.printStackTrace();
 			}
 		}
 	}
