@@ -11,6 +11,7 @@ import util.gdl.grammar.GdlRelation;
 import util.gdl.grammar.GdlSentence;
 import util.gdl.grammar.GdlTerm;
 import util.propnet.architecture.PropNet;
+import util.propnet.architecture.component.and.And;
 import util.propnet.architecture.component.transition.Transition;
 import util.propnet.architecture.component.proposition.Proposition;
 import util.propnet.architecture.component.constant.Constant;
@@ -37,6 +38,7 @@ public class PropNetStateMachine extends StateMachine
 	private MachineState initialState;
 	private List<Role> roles;
 	private List<Component> transitions;
+	private List<Component> ands;
 	
 	/**
 	 * Your JavaDoc here.
@@ -57,11 +59,15 @@ public class PropNetStateMachine extends StateMachine
 		//System.out.println(propnets.get(0).toString());
 		//System.out.println(propnet.toString());
 		
-		//create transitions list
+		//create transitions and ands list
 		transitions = new ArrayList<Component>();
+		ands = new ArrayList<Component>();
 		for (Component comp : propnet.getComponents()) {
 			if (comp instanceof Transition && !transitions.contains(comp)) {
 				transitions.add(comp);
+			}
+			if (comp instanceof And && !ands.contains(comp)) {
+				ands.add(comp);
 			}
 		}
 		
@@ -89,6 +95,29 @@ public class PropNetStateMachine extends StateMachine
 				System.out.println(prop.getName().toSentence().get(1));
 			}
 		}*/
+	}
+	
+	private void simplifyAnds() {
+		for (Component and : ands) {
+			List<Component> inputs = and.getInputs();
+			List<Component> allInputInputs = new ArrayList<Component>();
+			boolean allInputsAreAnds = true;
+			for (Component input : inputs) {
+				if (!(input instanceof And)) {
+					allInputsAreAnds = false;
+					break;
+				}
+				allInputInputs.addAll(input.getInputs());
+			}
+			if (allInputsAreAnds) {
+				// TODO
+				// create a new And component that takes everything in allInputInputs as inputs
+				// and has the same outputs as the original And component
+				// cut out the old And component and its immediate inputs
+					// this also entails modifying 'ands' in this class, and some stuff in 'propnet'...
+				// put in the new one
+			}
+		}
 	}
 
 	// mostly copied from ProverStateMachine
@@ -262,7 +291,7 @@ public class PropNetStateMachine extends StateMachine
 	@Override
 	public synchronized MachineState getNextState(MachineState state, List<Move> moves) throws TransitionDefinitionException {
 		setState(state);
-		setMoves(moves);
+		List<Proposition> newlyTrueProps = setMoves(moves);
 		update(true);
 		List<GdlSentence> stateTerms = new ArrayList<GdlSentence>();
 		for (GdlTerm key : propnet.getBasePropositions().keySet()) {
@@ -288,11 +317,15 @@ public class PropNetStateMachine extends StateMachine
 		return roles;
 	}
 	
-	private synchronized void setMoves(List<Move> moves) {
+	private synchronized List<Proposition> setMoves(List<Move> moves) {
+		List<Proposition> newlyTrueProps = new ArrayList<Proposition>();
 		for (int i = 0; i < moves.size(); i++) {
 			GdlTerm doesState = GdlPool.getRelation(GdlPool.getConstant("does"), new GdlTerm[] { roles.get(i).getName().toTerm(), moves.get(i).getContents().toTerm() }).toTerm();
-			propnet.getInputPropositions().get(doesState).setValue(true);
+			Proposition prop = propnet.getInputPropositions().get(doesState);
+			prop.setValue(true);
+			newlyTrueProps.add(prop);
 		}
+		return newlyTrueProps;
 	}
 	
 	private synchronized void setState(MachineState state) {
