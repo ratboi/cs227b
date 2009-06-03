@@ -46,6 +46,28 @@ public abstract class Component
 	{
 		outputs.add(output);
 	}
+	
+	/**
+	 * Removes an input.
+	 * 
+	 * @param input
+	 *            Input to remove.
+	 */
+	public void removeInput(Component input)
+	{
+		inputs.remove(input);
+	}
+
+	/**
+	 * Removes an output.
+	 * 
+	 * @param output
+	 *            Output to remove.
+	 */
+	public void removeOutput(Component output)
+	{
+		outputs.remove(output);
+	}
 
 	/**
 	 * Getter method.
