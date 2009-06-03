@@ -36,6 +36,7 @@ public class CloseGamer extends StateMachineGamer {
 	
 	// search-related variables
 	private Heuristic heuristic;
+	private int DepthCharges = 3;
 	private Map<MachineState, CachedTermination> terminatingStates = new HashMap<MachineState, CachedTermination>();
 	private Map<MachineState, Double> stateValues = new HashMap<MachineState, Double>();
 	
@@ -56,6 +57,10 @@ public class CloseGamer extends StateMachineGamer {
 		System.out.println("START - " + System.currentTimeMillis());
 		heuristic = new MonteCarloHeuristic();
 		stateValues = new HashMap<MachineState, Double>();
+		endBook = new HashMap<MachineState, Double>();
+		terminatingStates = new HashMap<MachineState, CachedTermination>();
+		foundMove = false;
+		stoppedEarly = false;
 		
 		EndBookThread endBookThread = new EndBookThread(getStateMachine(), getCurrentState(), getRole(), timeout, this);
 		endBookThread.start();
@@ -272,9 +277,18 @@ public class CloseGamer extends StateMachineGamer {
 					}
 				}
 				*/
-				
+				if (stoppedEarly) break;
 				maxLevel++;
 			}
+			if (maxLevel==1) {
+				if(DepthCharges==3) DepthCharges--;
+				else DepthCharges =1;
+			}
+			else if (DepthCharges<3) {
+				DepthCharges++;
+			}
+			System.out.println("USING HEURISTIC WITH " + DepthCharges + " DEPTH CHARGES");
+			heuristic = new MonteCarloHeuristic(DepthCharges);
 		}
 		
 		private double getMinScore(Move initialMove, Move latestMove, MachineState currentState, int curLevel, int maxLevel) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {

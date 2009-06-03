@@ -26,7 +26,7 @@ public class CommandLinePlayerRunner {
 					System.getProperty("java.class.path"),
 					"player.CommandLinePlayer",
                     "CloseGamer",  //CHANGE ME
-                    "9147");        //OPTIONAL: CHANGE ME 
+                    "9150");        //OPTIONAL: CHANGE ME 
 			
 			pb.redirectErrorStream( true );
 			
